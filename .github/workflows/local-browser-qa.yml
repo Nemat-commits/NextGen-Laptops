@@ -1,7 +1,7 @@
 name: Isolated admin browser QA
 on:
   push:
-    branches: [arena/b202441a-nextgen-laptops]
+    branches: ['arena/**']
 permissions:
   contents: read
 jobs:
