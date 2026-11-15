@@ -5,7 +5,7 @@ import {ArrowLeft,ArrowRight,ArrowUpRight,MessageCircle} from 'lucide-react';
 import type {Metadata} from 'next';
 import ProductCard from '@/components/ProductCard';
 import {catalog} from '@/lib/catalog';
-import {price} from '@/lib/formatters';
+import ProductPrice from '@/components/ProductPrice';
 import {modelReference} from '@/lib/model-specs';
 import {relatedProducts} from '@/lib/related';
 import {manufacturerDetails} from '@/lib/manufacturer-details';
@@ -23,7 +23,7 @@ export default async function ProductPage({params}:{params:Promise<{slug:string}
  return <main className="wrap detail">
   <Link href="/shop" className="back"><ArrowLeft size={16}/> Back to collection</Link>
   <div className="detail-layout"><div className="detail-image"><Image src={p.image_url||'/laptop-placeholder.svg'} alt={p.image_url?p.title:'Product photo pending'} fill sizes="(max-width:800px) 100vw, 50vw" unoptimized={!!p.image_url}/></div>
-   <div className="detail-copy"><div className="eyebrow">{p.brand} / {categories.find(c=>c.id===p.category_id)?.name||'PRODUCT'}</div><h1>{p.title}</h1><p className="detail-sub">{[p.cpu,p.ram_gb&&`${p.ram_gb} GB RAM`,p.storage_gb&&`${p.storage_gb} GB storage`].filter(Boolean).join(' · ')}</p><div className="detail-price">{price(p.discount_price_pkr??p.price_pkr)}</div><p className="stock">{p.stock_status==='unconfirmed'?'Availability to be confirmed':p.stock_status.replaceAll('_',' ')}</p><p className="description">{p.description}</p>
+   <div className="detail-copy"><div className="eyebrow">{p.brand} / {categories.find(c=>c.id===p.category_id)?.name||'PRODUCT'}</div><h1>{p.title}</h1><p className="detail-sub">{[p.cpu,p.ram_gb&&`${p.ram_gb} GB RAM`,p.storage_gb&&`${p.storage_gb} GB storage`].filter(Boolean).join(' · ')}</p><div className="detail-price"><ProductPrice original={p.price_pkr} discount={p.discount_price_pkr}/></div><p className="stock">{p.stock_status==='unconfirmed'?'Availability to be confirmed':p.stock_status.replaceAll('_',' ')}</p><p className="description">{p.description}</p>
     {wa?<a className="primary-button" href={`https://wa.me/${wa}?text=${encodeURIComponent(`Hello, I'm interested in ${message}. Please share price and availability.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={18}/> Enquire on WhatsApp <ArrowUpRight size={17}/></a>:<p className="notice-inline">Contact the shop to confirm price and availability.</p>}
     {p.image_source&&<p className="source"><a href={p.image_source} target="_blank" rel="noreferrer">Manufacturer image source ↗</a> · Image may not represent the exact configuration.</p>}
    </div></div>
