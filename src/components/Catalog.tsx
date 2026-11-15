@@ -1,10 +1,10 @@
 'use client';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import Fuse from 'fuse.js';
 import {ChevronDown,Search,SlidersHorizontal,X} from 'lucide-react';
 import type {Product,Category} from '@/lib/inventory';
-import {cpuFamily,emptyFilters,generation,matchesFilters,readFilters,writeFilters,type Filters} from '@/lib/filters';
+import {cpuFamily,emptyFilters,generation,readFilters,writeFilters,type Filters} from '@/lib/filters';
 import ProductCard from './ProductCard';
+import {createSearchIndex,searchProducts} from '@/lib/search';
 
 type Group='brand'|'category'|'cpu'|'generation'|'ram'|'storage'|'condition'|'stock';
 const labels:Record<Group,string>={brand:'Brand',category:'Category',cpu:'Processor',generation:'Generation',ram:'Memory',storage:'Storage',condition:'Condition',stock:'Availability'};
@@ -17,9 +17,8 @@ export default function Catalog({products,categories,initialQuery}:{products:Pro
  const toggle=(group:Group,value:string)=>{const current=f[group];change({...f,[group]:current.includes(value)?current.filter(v=>v!==value):[...current,value]})};
  const opts=useMemo(()=>{const values=(fn:(p:Product)=>string)=>Array.from(new Set(products.map(fn).filter(Boolean))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));return {category:categories.filter(c=>products.some(p=>p.category_id===c.id)).map(c=>c.id),brand:values(p=>p.brand),cpu:values(p=>cpuFamily(p.cpu)),generation:values(p=>generation(p.cpu)),ram:values(p=>p.ram_gb?.toString()||''),storage:values(p=>p.storage_gb?.toString()||''),condition:values(p=>p.condition||''),stock:values(p=>p.stock_status)}},[products,categories]);
  const display=(group:Group,value:string)=>group==='category'?categories.find(c=>c.id===value)?.name||value:group==='ram'||group==='storage'?`${value} GB`:group==='cpu'?value.toUpperCase():group==='generation'?value.replace(/gen/i,'Gen'):group==='stock'?statusLabel[value]||value:value.replaceAll('_',' ');
- const searchIndex=useMemo(()=>products.map(p=>({product:p,search:`${p.title} ${p.brand} ${p.cpu} ${p.description} ${p.ram_gb||''}gb ${p.storage_gb||''}gb ${p.condition||''}`})),[products]);
- const fuse=useMemo(()=>new Fuse(searchIndex,{keys:['search'],ignoreLocation:true,threshold:.28}),[searchIndex]);
- const results=useMemo(()=>{const tokens=f.q.trim().toLowerCase().split(/\s+/).filter(Boolean);const fuzzy=tokens.map(token=>new Set(fuse.search(token).map(match=>match.item.product.id)));let list=searchIndex.filter(entry=>tokens.every((token,i)=>entry.search.toLowerCase().replace(/\s+/g,'').includes(token.replace(/\s+/g,''))||fuzzy[i].has(entry.product.id))).map(x=>x.product).filter(p=>matchesFilters(p,f));return [...list].sort((a,b)=>{const ap=a.discount_price_pkr??a.price_pkr,bp=b.discount_price_pkr??b.price_pkr;if(f.sort==='name')return a.title.localeCompare(b.title);if(f.sort==='price-low'||f.sort==='price-high'){if(ap==null)return bp==null?0:1;if(bp==null)return -1;return f.sort==='price-low'?ap-bp:bp-ap}return 0})},[f,searchIndex,fuse]);
+ const searchIndex=useMemo(()=>createSearchIndex(products),[products]);
+ const results=useMemo(()=>searchProducts(searchIndex,f),[f,searchIndex]);
  const loadSentinel=useRef<HTMLDivElement>(null);
  useEffect(()=>{const node=loadSentinel.current;if(!node||limit>=results.length||typeof IntersectionObserver==='undefined')return;const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();setLimit(n=>Math.min(n+12,results.length));}},{rootMargin:'300px'});observer.observe(node);return()=>observer.disconnect()},[limit,results.length]);
  const active=groupOrder.flatMap(group=>f[group].map(value=>({group,value})));const activeCount=active.length+(f.min?1:0)+(f.max?1:0)+(f.deals?1:0);const hasPrices=products.some(p=>p.price_pkr!=null);

@@ -1,0 +1,26 @@
+import {strict as assert} from 'node:assert';
+import {inventory} from '../src/lib/inventory';
+import {emptyFilters} from '../src/lib/filters';
+import {createSearchIndex,searchProducts} from '../src/lib/search';
+// Reverse the original order so this test cannot pass merely by retaining inventory order.
+const index=createSearchIndex([...inventory].reverse());
+const query=(q:string)=>searchProducts(index,{...emptyFilters(),q});
+const results=query('dell 5310');
+assert.ok(results.length>1);
+const matching=results.filter(p=>p.title.toLowerCase().includes('5310'));
+assert.ok(matching.length>1);
+assert.ok(results.slice(0,matching.length).every(p=>p.title.toLowerCase().includes('5310')));
+assert.ok(results.some(p=>p.title.includes('5300')), 'Related fuzzy results are retained');
+assert.ok(query('DELL   5310')[0].title.includes('5310'));
+assert.ok(query('lenovo l13')[0].title.toLowerCase().includes('l13'));
+assert.ok(query('hp 840')[0].title.includes('840'));
+assert.ok(query('dell 5310 16gb').every(p=>p.brand==='Dell'));
+assert.ok(query('dell 5310 16gb')[0].title.includes('5310'));
+assert.ok(query('dell 5310 16gb')[0].ram_gb===16);
+assert.ok(query('dell latitue').length>0, 'Fuzzy typo matches are retained');
+assert.deepEqual(searchProducts(index,emptyFilters()).map(p=>p.id),[...inventory].reverse().map(p=>p.id));
+const filtered=searchProducts(index,{...emptyFilters(),q:'dell 5310',ram:['16']});
+assert.ok(filtered.length>0&&filtered.every(p=>p.ram_gb===16));
+const sorted=searchProducts(index,{...emptyFilters(),q:'dell 5310',sort:'name'});
+assert.deepEqual(sorted.map(p=>p.title),[...sorted.map(p=>p.title)].sort((a,b)=>a.localeCompare(b)));
+console.log('Search relevance checks passed');

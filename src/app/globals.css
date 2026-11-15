@@ -129,3 +129,14 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 .footer-top .social-links{margin-top:15px}.footer-top .social-links a.social-item,.footer-top .social-links .social-item{background:#1e3047;border-color:#344b61;color:#dceaf6}.footer-top .social-links .social-pending{color:#a3b5c6}.footer-top .social-links .social-item small{color:#a5b4c6}
 .detail-home{display:flex;justify-content:center;margin-top:42px}.detail-home .outline-button{margin:0;border-radius:6px;background:white;gap:10px}.detail-home .outline-button:hover{background:#eaf4fb}
 @media(max-width:680px){.about-section{grid-template-columns:1fr;gap:24px;padding:48px 0 56px}.about-copy h1{font-size:32px}.about-copy p{font-size:14px}.about-side{padding:26px}.about-number{font-size:55px}.about-phone{font-size:13px}.detail-home{margin-top:30px}}
+/* The compact header opens a real navigation menu, rather than linking directly to the shop. */
+.mobile-navigation{display:none}
+.mobile-nav-panel[hidden]{display:none}
+@media(max-width:680px){
+ .mobile-navigation{display:block}
+ .mobile-menu{display:grid;place-items:center;width:44px;height:44px;padding:0;background:transparent;border:0;border-radius:6px;color:#1a324d}
+ .mobile-menu:hover,.mobile-menu[aria-expanded="true"]{background:#eaf4fb;color:#087dc5}
+ .mobile-nav-panel:not([hidden]){position:absolute;top:100%;left:0;right:0;display:flex;flex-direction:column;padding:10px 16px 16px;background:#fff;border-top:1px solid #e5edf3;box-shadow:0 14px 28px #102e4d26;max-height:calc(100vh - 105px);overflow-y:auto}
+ .mobile-nav-panel a{display:block;padding:12px 10px;border-radius:5px;font-size:14px;font-weight:600;color:#273b51}
+ .mobile-nav-panel a:hover,.mobile-nav-panel a:focus-visible{background:#edf6fb;color:#067ab8}
+}
