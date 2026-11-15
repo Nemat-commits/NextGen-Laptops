@@ -1,0 +1,6 @@
+import Link from 'next/link';
+import LazyProductImage from './LazyProductImage';
+import {ArrowUpRight} from 'lucide-react';
+import type {Product,Category} from '@/lib/inventory';
+import {price} from '@/lib/formatters';
+export default function ProductCard({product:p,categories}:{product:Product,categories:Category[]}){const kind=categories.find(c=>c.id===p.category_id)?.name||'Product';return <Link href={'/laptops/'+p.slug} className="card" data-reveal><div className="card-img"><span className="card-badge">{p.brand||kind}</span><LazyProductImage key={p.image_url||"placeholder"} src={p.image_url} alt={p.image_url?`${p.title}, manufacturer reference image`:'Product image not yet available'}/><span className="image-corner"><ArrowUpRight size={16}/></span></div><div className="card-content"><div className="card-kicker">{p.brand||kind} <span>/</span> {kind}</div><h3>{p.title}</h3><p>{[p.cpu,p.ram_gb&&`${p.ram_gb} GB RAM`,p.storage_gb&&`${p.storage_gb} GB storage`].filter(Boolean).join(' · ')}</p><div className="card-bottom"><strong>{price(p.discount_price_pkr??p.price_pkr)}</strong><span>VIEW DETAILS <ArrowUpRight size={14}/></span></div></div></Link>}

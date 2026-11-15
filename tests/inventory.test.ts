@@ -1,0 +1,12 @@
+import {strict as assert} from 'node:assert';
+import {inventory} from '../src/lib/inventory';
+assert.equal(inventory.reduce((sum,p)=>sum+p.quantity,0),95);
+assert.equal(inventory.length,45);
+assert.equal(new Set(inventory.map(p=>p.slug)).size,inventory.length);
+assert.deepEqual(inventory.flatMap(p=>p.source_rows||[]).sort((a,b)=>a-b),Array.from({length:95},(_,i)=>i+1));
+assert.ok(inventory.every(p=>p.price_pkr===null && p.stock_status==='unconfirmed'));
+console.log('Inventory checks passed');
+import {existsSync} from 'node:fs';
+assert.equal(inventory.filter(p=>p.image_url).length,43);
+assert.ok(inventory.filter(p=>p.image_url?.startsWith('/')).every(p=>existsSync('public'+p.image_url)));
+assert.deepEqual(inventory.filter(p=>!p.image_url).map(p=>p.title),['Microsoft Surface 3','HP ZBook']);

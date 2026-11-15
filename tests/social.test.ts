@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {socialUrl} from '../src/lib/social';
+assert.equal(socialUrl(undefined,'tiktok'),null);
+assert.equal(socialUrl('https://www.tiktok.com/@nextgen','tiktok'),'https://www.tiktok.com/@nextgen');
+assert.equal(socialUrl('https://www.instagram.com/nextgen/','instagram'),'https://www.instagram.com/nextgen/');
+assert.equal(socialUrl('https://tiktok.com.evil.test/','tiktok'),null);
+assert.equal(socialUrl('javascript:alert(1)','instagram'),null);
+assert.equal(socialUrl('http://instagram.com/example','instagram'),null);
+assert.equal(socialUrl('https://instagram.com/example','tiktok'),null);
+console.log('Social link checks passed');

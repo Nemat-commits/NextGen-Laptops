@@ -1,1 +1,6 @@
-{"buildCommand":"npm run build","framework":null,"outputDirectory":"dist","rewrites":[{"destination":"/api/actions","source":"/actions"}]}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next"
+}

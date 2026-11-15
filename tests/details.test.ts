@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {inventory} from '../src/lib/inventory';
+import {modelReference} from '../src/lib/model-specs';
+import {relatedProducts} from '../src/lib/related';
+import {manufacturerDetails} from '../src/lib/manufacturer-details';
+const current=inventory.find(p=>p.title==='Dell Latitude 5420')!;
+assert.equal(modelReference(current)?.display,'14-inch');
+assert.match(modelReference(current)!.source,/dell\.com/);
+assert.equal(modelReference({...current,title:'HP ZBook'}),undefined);
+const related=relatedProducts(current,inventory);
+assert.equal(related.length,4);
+assert.ok(related.every(p=>p.id!==current.id && p.is_published));
+assert.equal(new Set(related.map(p=>p.title)).size,4);
+assert.deepEqual(relatedProducts(current,[current]),[]);
+assert.equal(relatedProducts(current,[current,{...inventory[0],is_published:false}]).length,0);
+console.log('Detail and related product checks passed');
+
+assert.ok(manufacturerDetails(current).some(s=>s.label==='Memory support'));
+assert.ok(manufacturerDetails(current).every(s=>new URL(s.source).hostname.endsWith('dell.com')));
+assert.ok(manufacturerDetails(inventory.find(p=>p.title==='Lenovo L13'&&p.cpu.includes('11th'))!).some(s=>s.label==='Battery and power'));
+assert.deepEqual(manufacturerDetails({...current,title:'HP ZBook'}),[]);
