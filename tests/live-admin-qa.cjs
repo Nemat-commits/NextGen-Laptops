@@ -53,7 +53,7 @@ async function fillProduct(page,slug,title,category,large=false){
   const signedIn=await check('Live admin sign-in and dashboard',async()=>{
    await page.locator('input[name=email]').fill(email);await page.locator('input[name=password]').fill(password);
    await page.getByRole('button',{name:'Sign in'}).click();await page.waitForURL(/\/admin\/?$/,{timeout:20000});
-   await page.getByText('Your inventory').waitFor();
+   await page.getByRole('heading',{name:'Your inventory',exact:true}).waitFor();
   });
   if(!signedIn)throw new Error('Cannot proceed without a working admin dashboard');
   const created=await check('Create a dedicated test category',async()=>{
