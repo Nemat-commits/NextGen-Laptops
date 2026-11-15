@@ -5,7 +5,7 @@ const {readFile}=require('node:fs/promises');
 (async()=>{
  const browser=await chromium.launch({headless:true});
  try{
-  const page=await browser.newPage();const base='http://127.0.0.1:3002';
+  const context=await browser.newContext();const page=await context.newPage();const base='http://127.0.0.1:3002';
   await page.goto(base+'/admin/login');assert.equal(await page.locator('.header').count(),0);assert.equal(await page.getByRole('navigation',{name:'Admin navigation'}).count(),0);await page.locator('[name=email]').fill('admin@example.test');await page.locator('[name=password]').fill('local-test-password');await page.getByRole('button',{name:'Sign in'}).click();await page.waitForURL('**/admin');
   const adminNav=page.getByRole('navigation',{name:'Admin navigation'});assert.equal(await adminNav.count(),1);assert.equal(await page.locator('.header').count(),0);assert.equal(await page.getByRole('navigation',{name:'Main navigation'}).count(),0);assert.equal(await adminNav.getByRole('link',{name:'Overview'}).getAttribute('aria-current'),'page');
   await page.setViewportSize({width:375,height:800});for(const name of ['Overview','Products','Categories'])assert.equal(await adminNav.getByRole('link',{name}).isVisible(),true);assert.equal(await page.getByRole('button',{name:'Sign out'}).isVisible(),true);
