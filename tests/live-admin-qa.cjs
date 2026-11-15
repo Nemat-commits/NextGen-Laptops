@@ -65,13 +65,14 @@ async function fillProduct(page,slug,title,category,large=false){
   if(!created||!categoryId)throw new Error('Cannot continue without the QA category');
   await check('Reject a duplicate category',async()=>{
    await goto(page,'/admin/categories');await page.locator('input[name=name]').fill(categorySlug);
-   await page.getByRole('button',{name:'Create category'}).click();await page.waitForURL(/error=save/,{timeout:20000});
+   await page.getByRole('button',{name:'Create category'}).click();await page.waitForURL(/error=(?:duplicate|save)/,{timeout:20000});
   });
   await check('Reject a discount equal to the original price',async()=>{
    await goto(page,'/admin/products/new');await page.locator('input[name=title]').fill('QA invalid product');
    await page.locator('input[name=slug]').fill(`qa-invalid-${token}`);await page.locator('select[name=category_id]').selectOption(categoryId);
    await page.locator('input[name=price_pkr]').fill('1000');await page.locator('input[name=discount_price_pkr]').fill('1000');
-   await page.getByRole('button',{name:'Save product'}).click();await page.waitForURL(/error=invalid/,{timeout:20000});
+   await page.getByRole('button',{name:'Save product'}).click();
+   if(process.env.QA_LOCAL==='1')await page.locator('#discount_price_pkr-error').waitFor({timeout:20000});else await page.waitForURL(/error=invalid/,{timeout:20000});
    assert.equal(await lookup(`qa-invalid-${token}`),null);
   });
   const added=await check('Create an unpublished test product with a small image',async()=>{

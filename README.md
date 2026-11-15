@@ -14,7 +14,7 @@ Copy `.env.example` to `.env.local` to configure a dedicated Supabase project. T
 
 ## Database and administrator setup
 
-Use a dedicated NextGen Supabase project. Do not run these operations against an unrelated project. In the Supabase SQL editor, apply `supabase/migrations/0001_initial_schema.sql` **once**, then run `supabase/seed.sql`. The seed uses `ON CONFLICT DO NOTHING`, so rerunning it will not overwrite edits. To regenerate after changing the transcription, run `npx tsx scripts/generate-seed.ts`.
+Use a dedicated NextGen Supabase project. Do not run these operations against an unrelated project. In the Supabase SQL editor, apply `supabase/migrations/0001_initial_schema.sql` **once**, then apply the later migrations in `supabase/migrations` in order (including `0002_product_uniqueness.sql`), and then run `supabase/seed.sql`. The seed uses `ON CONFLICT DO NOTHING`, so rerunning it will not overwrite edits. To regenerate after changing the transcription, run `npx tsx scripts/generate-seed.ts`.
 
 Create an Auth user through Supabase, then grant that specific user access from the SQL editor (replace with the actual user UUID from Auth, not an email):
 
@@ -47,3 +47,9 @@ The homepage selects distinct brands first, then fills any remaining featured sl
 The model-family reference section includes separately sourced, researched information beyond display for 43 of 45 inventory configurations. These summaries are not yet exhaustive: some models have only a few researched fields, and HP examples may describe a specific manufacturer SKU rather than all variants. The inventory does not identify the exact Surface or ZBook model, and the listed unit's CPU SKU, ports, storage type, battery health and other individual details must be verified. The manufacturer's linked documentation is the source for further specifications; do not treat examples as confirmed stock features.
 
 Facebook, Instagram and TikTok links in the visit section and About page use the URLs supplied by the shop owner. They can be overridden with `NEXT_PUBLIC_FACEBOOK_URL`, `NEXT_PUBLIC_INSTAGRAM_URL` and `NEXT_PUBLIC_TIKTOK_URL` respectively. Rebuild the site after changing these public environment variables.
+
+### Duplicate protection and migration safety
+
+Each listing is unique by product title, processor, RAM and storage, ignoring capitalization and repeated whitespace. Use its quantity for identical units; different RAM, storage or processors remain separate variants. The database also enforces case-insensitive, trimmed URL slugs. Migration `0002_product_uniqueness.sql` requires PostgreSQL 15 or newer and fails rather than deleting or merging any existing duplicates. Before applying it to an existing store, back up the database and check for normalized duplicate configurations and slugs; resolve any conflicts with the owner. Deploy the migration before deploying application code that relies on it. The existing slug constraint remains in place.
+
+A failed form save keeps text inputs on screen and explains the specific issue when possible. For security and browser compatibility, reselect an image after a failed submission.
