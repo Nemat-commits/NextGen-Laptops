@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import {validateProduct} from '../src/lib/product-validation';
+const base={title:'Test',slug:'test',category_id:'c',stock_status:'unconfirmed',quantity:'0'};
+function form(values:Record<string,string>){const f=new FormData();for(const [k,v] of Object.entries({...base,...values}))f.set(k,v);return f}
+assert.deepEqual(validateProduct(form({})).errors,{});
+for(const slug of ['bad slug','-bad','bad-','bad--slug','no_underscore','bad/slash'])assert.ok(validateProduct(form({slug})).errors.slug,slug);
+assert.equal(validateProduct(form({slug:'Test-Slug'})).values.slug,'test-slug');
+for(const value of ['-1','1.5','1e3','2147483648'])assert.ok(validateProduct(form({quantity:value})).errors.quantity,value);
+assert.equal(validateProduct(form({quantity:'2147483647'})).numbers.quantity,2147483647);
+assert.ok(validateProduct(form({price_pkr:'100',discount_price_pkr:'100'})).errors.discount_price_pkr);
+assert.ok(validateProduct(form({price_pkr:'',discount_price_pkr:'0'})).errors.discount_price_pkr);
+assert.deepEqual(validateProduct(form({price_pkr:'100',discount_price_pkr:'0'})).errors,{});
+assert.ok(validateProduct(form({category_id:''})).errors.category_id);
+assert.ok(validateProduct(form({stock_status:'bad'})).errors.stock_status);
+assert.ok(validateProduct(form({image_url:'http://unsafe.test/image.jpg'})).errors.image_url);
+assert.ok(validateProduct(form({image_source:'https://u:p@example.com/a'})).errors.image_source);
+assert.deepEqual(validateProduct(form({image_url:'/products/dell-5300.webp',image_source:'https://example.com/a'})).errors,{});
+const f=form({});f.set('image_file',new File(['image'],'file.png',{type:'image/png'}));f.set('camera_file',new File(['image'],'camera.jpg',{type:'image/jpeg'}));assert.ok(validateProduct(f).errors.image_file);
+console.log('Product validation checks passed');

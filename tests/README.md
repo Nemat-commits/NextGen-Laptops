@@ -15,3 +15,5 @@ Restart the mock before each run to clear its state. The integration script only
 To check the framework multipart limit, build and start the app **without Supabase environment variables**, on local port 3000, then run `node tests/admin-action-body.test.mjs`. The check sends a large file to the login action solely to test the request body limit; it does not test authenticated uploads.
 
 The optional `tests/admin-browser.integration.cjs` exercises category filters, safe deletion, and simulated camera-file selection and resizing using Playwright with the same in-memory mock. Install Playwright and its Chromium browser separately (`npm install --no-save --package-lock=false playwright` and `npx playwright install --with-deps chromium`), start the two local services above, then run `node tests/admin-browser.integration.cjs`. A simulated file input does not test a physical device camera or permission prompt.
+
+Run `npx tsx tests/product-uniqueness.test.ts` to verify the SQL indexes using an isolated PostgreSQL-compatible PGlite database; no production records are touched. `tests/product-validation.test.ts` covers form validation.
