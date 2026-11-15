@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {featuredProducts} from '../src/lib/featured';
+import {inventory} from '../src/lib/inventory';
+const featured=featuredProducts(inventory);
+assert.equal(featured.length,4);
+assert.deepEqual(featured.slice(0,3).map(p=>p.brand),['Dell','Lenovo','HP']);
+assert.equal(new Set(featured.map(p=>p.title)).size,4);
+assert.equal(featuredProducts([]).length,0);
+assert.equal(featuredProducts(inventory,2).length,2);
+assert.ok(featuredProducts(inventory).every(p=>p.is_published&&p.image_url));
+console.log('Featured product checks passed');

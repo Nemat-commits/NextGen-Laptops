@@ -1,180 +1,49 @@
-# NextGen Laptops — Website
+# NextGen Laptops
 
-Standalone, git-deployable version of the NextGen Laptops Abbottabad
-website (ported from the Muse artifact of the same name, so it can run
-on any normal host).
-
-- **Public site:** soft, Apple-like design, all content (shop name,
-  WhatsApp/phone, address, deals, services, testimonials, FAQs) rendered
-  live from the server's data store.
-- **Admin panel:** full editor for everything above — deals with
-  add/edit/delete, services, testimonials, FAQs, settings and socials.
-- **Stack:** React 19 + React Query client (bundled with esbuild,
-  CSS compiled with the Tailwind v4 CLI) and a dependency-free Node
-  server (built-in `node:http` + `node:sqlite`) that serves the built
-  client and a `POST /actions` endpoint.
+A fresh Next.js storefront and Supabase-backed inventory starter. The supplied list is transcribed as 95 numbered units, grouped into 45 configurations. Repeated configurations retain their source row numbers and quantity. In the absence of a configured database, the site displays this data as an explicitly labelled preview; the preview is not live stock.
 
 ## Run locally
 
-Requires Node 22 or newer.
-
-```bash
-npm install
+```sh
+npm ci
+npm run dev
 npm run build
-npm start            # http://localhost:3000
 ```
 
-`npm run dev` does build + start in one step. The server listens on
-`$PORT` (default 3000) and stores its data in a local SQLite file,
-`server/data/app.db` (override with the `DATA_FILE` env var), through
-the libSQL client in `server/db.mjs`. Local development needs **no
-environment variables and no database setup** — the file is created
-and seeded automatically on first run. Seeding only happens when the
-store is empty, so admin edits are never overwritten. To use a hosted
-Turso database instead of the file, see the Turso section below.
+Copy `.env.example` to `.env.local` to configure a dedicated Supabase project. The WhatsApp number must be in international format without `+` or spaces. If not set, the site uses the owner-confirmed shop number, 923215744034.
 
-## Admin panel
+## Database and administrator setup
 
-Open the site and go to **/#/admin** (i.e. the `/admin` route — in this
-hash-routed build the address is `https://your-domain/#/admin`).
-There is deliberately **no link to it anywhere on the public pages**;
-it can only be reached by typing the address.
+Use a dedicated NextGen Supabase project. Do not run these operations against an unrelated project. In the Supabase SQL editor, apply `supabase/migrations/0001_initial_schema.sql` **once**, then run `supabase/seed.sql`. The seed uses `ON CONFLICT DO NOTHING`, so rerunning it will not overwrite edits. To regenerate after changing the transcription, run `npx tsx scripts/generate-seed.ts`.
 
-Log in with the admin username and password configured on the server:
+Create an Auth user through Supabase, then grant that specific user access from the SQL editor (replace with the actual user UUID from Auth, not an email):
 
-- Set them with the environment variables **`ADMIN_USERNAME`** and
-  **`ADMIN_PASSWORD`** (recommended in production — set them in your
-  host's dashboard, never commit them to git).
-- If the env vars are unset, the server falls back to the built-in
-  default credentials that were set up for the shop. Change them via
-  the env vars before exposing the site publicly.
-
-Login sessions are random tokens stored server-side with a 7-day
-expiry; the browser keeps the token in localStorage.
-
-## Free durable database with Turso
-
-By default the site stores its data in a local SQLite file. On hosts
-without a durable disk (notably Vercel) that file is ephemeral, so
-admin edits would be lost on cold starts. The fix is a **free hosted
-Turso (libSQL) database** — Turso's free tier needs no credit card and
-is more than enough for this site. The server switches to it
-automatically when two environment variables are present; no code
-changes are needed.
-
-1. Create a free account at [turso.tech](https://turso.tech) (sign up
-   with GitHub or email — no card required).
-2. Create a database (dashboard **Create Database**, any name, e.g.
-   `nextgen-laptops`) — or with the Turso CLI: `turso db create nextgen-laptops`.
-3. Get the database URL (dashboard shows it as `libsql://…`, or
-   `turso db show nextgen-laptops --url`) and create an auth token
-   (dashboard **Create Token**, or `turso db tokens create nextgen-laptops`).
-4. Set both variables wherever the site runs:
-   - **Vercel:** Project → Settings → Environment Variables →
-     `TURSO_DATABASE_URL` = the `libsql://…` URL and
-     `TURSO_AUTH_TOKEN` = the token. Then **redeploy** (Deployments →
-     ⋯ → Redeploy) so the functions pick them up.
-   - **Render (optional):** the same two variables in the service's
-     Environment tab (`render.yaml` already declares them) — with
-     Turso set, you no longer need a persistent disk for the data.
-5. Done: on the next start the server creates the tables in Turso and
-   seeds the shop data if the database is empty. From then on, admin
-   edits, deals and login sessions are stored durably in Turso and
-   survive redeploys and cold starts on any host.
-
-Notes:
-
-- Never commit the token to git — it belongs only in the host's
-  environment-variable settings.
-- Local development does not need any of this: with the two variables
-  unset, the server uses the local file database as before.
-- To go back to the file database, just remove the two variables and
-  redeploy/restart.
-
-## Deploy via git — Vercel (supported, with a storage caveat)
-
-This repo includes a `vercel.json` and an `api/actions.mjs` serverless
-function, so a plain Vercel import of the repo works:
-
-1. Push this folder to a GitHub repository.
-2. In Vercel: **Add New → Project**, import the repo. Do not change the
-   build settings — `vercel.json` already sets the build command
-   (`npm run build`), the output directory (`dist`), and a rewrite from
-   `/actions` to the serverless function.
-3. Optionally set `ADMIN_USERNAME` / `ADMIN_PASSWORD` in the Vercel
-   project's Environment Variables.
-
-**Caveat (only without Turso):** Vercel functions have no durable
-disk. If `TURSO_DATABASE_URL` is not set, the store falls back to a
-SQLite file in `/tmp`, so the site always displays correctly (it
-re-seeds with the shop's data on cold starts), but admin edits and
-login sessions can reset between cold starts and redeploys. Set up the
-free Turso database (previous section) to make Vercel fully durable —
-no host change needed.
-
-## Deploy via git — Render (recommended)
-
-
-
-This repo includes a `Dockerfile` and a `render.yaml` Blueprint.
-
-1. Push this folder to a GitHub repository.
-2. In Render: **New → Blueprint**, pick the repo. Render reads
-   `render.yaml`, builds the Docker image, and starts the web service
-   (health check: `/`).
-3. In the service's **Environment** tab, set `ADMIN_USERNAME` and
-   `ADMIN_PASSWORD`.
-4. Optional but recommended: attach a **persistent disk** and set
-   `DATA_FILE` to a path on it (for example `/var/data/app.db`).
-   Without a disk, the container filesystem is reset on each deploy
-   and the store is re-seeded with the default shop data (admin edits
-   made since the last deploy are lost).
-
-Manual alternative on Render: **New → Web Service**, connect the repo,
-choose the Docker runtime — everything else is the same.
-
-## Deploy alternatives
-
-- **Railway:** create a project from the GitHub repo; Railway detects
-  the `Dockerfile`. Set `ADMIN_USERNAME` / `ADMIN_PASSWORD` (and
-  optionally `DATA_FILE` pointing at a mounted volume) as service
-  variables. Railway provides `$PORT` automatically.
-- **Any VPS:** install Node 22+ and git, then:
-
-  ```bash
-  git clone <your-repo-url>
-  cd nextgen-laptops-deploy
-  npm install
-  npm run build
-  ADMIN_USERNAME=... ADMIN_PASSWORD=... PORT=3000 npm start
-  ```
-
-  Put it behind nginx/Caddy for HTTPS, and run it under systemd or
-  pm2 so it restarts on reboot. Or build the Docker image
-  (`docker build -t nextgen . && docker run -p 3000:3000 nextgen`).
-
-## Project layout
-
-```
-index.html          app shell (copied to dist/ at build)
-build.mjs           esbuild (JS + .webp assets) + Tailwind CSS build
-client/src/         React client (Site, Admin, icons, theme.css, assets)
-server/server.mjs   static file server + POST /actions dispatcher
-server/db.mjs       libSQL facade — Turso when TURSO_DATABASE_URL is
-                    set, otherwise the local SQLite file
-server/seed.mjs     seed data + editable-settings allow-list
-api/actions.mjs     Vercel serverless function (same actions)
-dist/               built client (generated, git-ignored)
-server/data/        sqlite data file (generated, git-ignored)
-Dockerfile          node:22 multi-stage image, EXPOSE $PORT
-render.yaml         Render Blueprint
+```sql
+insert into public.admin_users (user_id) values ('<auth-user-uuid>');
 ```
 
-## Notes
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, restart the application, and sign in at `/admin/login`. Only users explicitly listed in `admin_users` can modify products, categories or storage. Use the public anon key in the application, never the service-role key. The migration creates the public `product-images` bucket and restricts image writes to admins. Uploaded images should be optimized WebP where possible, maximum 2 MB.
 
-- Product photos are official manufacturer images with backgrounds
-  removed (transparent WebP cutouts in `client/src/assets/`), shown with
-  soft shadows so they work in light and dark mode. Admins can replace
-  any deal's photo via the Image URL field in the admin panel.
-- No opening hours are published on the site — the shop's note says to
-  call or WhatsApp to confirm today's hours.
+Configure the same public environment variables for the Vercel project and deploy this branch through the normal Git workflow. No deployment or remote database migration has been performed automatically.
+
+## Data provenance and limitations
+
+The source list does not include prices, actual stock status, condition, screen, exact processor models, graphics, warranty or drive type. Those fields must be verified before publishing; the app does not infer them. The quantities reflect the supplied rows, not confirmed current inventory. Some model names in the image are abbreviated (for example HP 840 G8, Lenovo L13 and HP ZBook); they are kept as provided rather than guessing a more specific variant. Product image placeholders clearly indicate missing photos. Manufacturer images are representative, not proof of an exact unit's appearance. Source links are provided on product pages; verify model variants and usage rights before production. Optimized local copies are included with the application; admin uploads use Supabase Storage.
+
+This is a functional foundation, not a complete implementation of every item in `docs/architecture.md`: remaining work includes the two unverified product images and verified descriptions, banner management, advanced search RPCs, performance-budget validation, and production deployment. The supplied blueprint is retained for reference. The security policy in the blueprint granting write access to *every* authenticated account has intentionally been replaced with an explicit administrator allowlist.
+
+### Signage and product imagery
+
+The storefront uses an optimized copy of the owner-supplied NextGen logo. The browser icon is cropped from the same artwork; the original is backed up in the NextGen Laptops Drive folder. Contact numbers are reproduced from the sign; WhatsApp uses the owner-confirmed number 0321 5744034. Manufacturer reference images are illustrative, not photos of the exact inventory unit. They were obtained from manufacturer pages and compressed locally for reliable delivery; each product page links to the source. Lenovo L13, Lenovo V15 and shortened HP names need confirmation against the actual units. `Microsoft Surface 3` and `HP ZBook` remain placeholders because the source list does not identify their exact variants. Verify all models, image rights, and configurations before publishing. Seed updates do not overwrite existing database records, so existing stores need deliberate admin edits rather than a blind rerun.
+
+### Shop information
+
+The sign supplied by the owner provides the two phone numbers; the owner confirmed that 0321 5744034 is the WhatsApp number. A web search for NextGen Laptops Abbottabad surfaced a TikTok listing identifying Jadoon Plaza Phase 2, Mandian, Abbottabad: https://www.tiktok.com/discover/cycle-shop-in-abbottabad. The previous repository also listed this area. Confirm the precise unit and hours with the shop before visiting. Search results also include similarly named businesses in other cities; their addresses, contact details and commercial claims have not been copied. The catalogue is a preview until Supabase is configured and stock is verified.
+
+Product detail pages distinguish the listed unit configuration from researched manufacturer model-family display options. Manufacturer sources are linked on the page; display panels and optional features may vary. Where the inventory lacks a precise model or specifications, the shop must verify them before listing them as facts for an individual unit.
+
+The homepage selects distinct brands first, then fills any remaining featured slots with distinct models. Product images use native lazy loading and a shimmer while an image is actually pending; the shop progressively adds results as the user approaches the bottom, with a Show more button as a fallback. Fast or cached images may finish too quickly for the shimmer to be noticeable.
+
+The model-family reference section includes separately sourced, researched information beyond display for 43 of 45 inventory configurations. These summaries are not yet exhaustive: some models have only a few researched fields, and HP examples may describe a specific manufacturer SKU rather than all variants. The inventory does not identify the exact Surface or ZBook model, and the listed unit's CPU SKU, ports, storage type, battery health and other individual details must be verified. The manufacturer's linked documentation is the source for further specifications; do not treat examples as confirmed stock features.
+
+TikTok and Instagram icons in the About section and footer use `NEXT_PUBLIC_TIKTOK_URL` and `NEXT_PUBLIC_INSTAGRAM_URL` when the shop provides verified HTTPS profile links. Until then, they appear as non-clickable pending labels rather than pointing to an unverified account. Rebuild the site after configuring the public environment variables.

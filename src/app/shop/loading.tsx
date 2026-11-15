@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="wrap shop-loading" aria-busy="true" aria-label="Loading the collection"><div className="skeleton skeleton-title"/><div className="skeleton skeleton-line"/><div className="skeleton-grid">{Array.from({length:8},(_,i)=><div className="skeleton skeleton-card" key={i}/>)}</div></main>}
