@@ -15,6 +15,6 @@ if(req.method==='GET'||req.method==='HEAD')return send(200,found,{'content-range
 if(req.headers.authorization!==`Bearer ${jwt}`)return send(403,{message:'not authenticated'});
 if(req.method==='POST'){const value={...body,id:body.id||'mock-'+Date.now(),extra_specs:{}};arr.push(value);return send(201,[value]);}
 if(req.method==='PATCH'){found.forEach(x=>Object.assign(x,body));return send(200,found);}
-if(req.method==='DELETE'){if(name==='products')products=products.filter(x=>x.id!==id);else categories=categories.filter(x=>x.id!==id);return send(200,found);}
+if(req.method==='DELETE'){if(name==='categories'&&products.some(p=>p.category_id===id))return send(409,{code:'23503',message:'category still in use'});if(name==='products')products=products.filter(x=>x.id!==id);else categories=categories.filter(x=>x.id!==id);return send(200,found);}
 return send(405,{});
 }).listen(4001,'127.0.0.1',()=>console.log('Mock Supabase ready'));

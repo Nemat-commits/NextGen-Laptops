@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import ProductPrice from '../src/components/ProductPrice';
+import {discountPercent} from '../src/lib/formatters';
+assert.equal(discountPercent(100000,90000),10);
+assert.equal(discountPercent(100000,97000),3);
+assert.equal(discountPercent(100000,89499),11);
+assert.equal(discountPercent(100000,89501),10);
+assert.equal(discountPercent(100,0),100);
+for(const [original,discount] of [[null,null],[0,0],[100,null],[100,100],[100,101],[null,20],[100,-1]] as const)assert.equal(discountPercent(original,discount),null);
+const sale=renderToStaticMarkup(<ProductPrice original={100000} discount={89499}/>);
+assert.match(sale,/<del>/);assert.match(sale,/Rs\. 100,000/);assert.match(sale,/Rs\. 89,499/);assert.match(sale,/−11%/);
+const regular=renderToStaticMarkup(<ProductPrice original={100000} discount={null}/>);assert.doesNotMatch(regular,/<del>|discount-badge/);assert.match(regular,/Rs\. 100,000/);
+const pending=renderToStaticMarkup(<ProductPrice original={null} discount={null}/>);assert.match(pending,/Price on request/);
+console.log('Price display and rounding checks passed');

@@ -1,0 +1,30 @@
+name: Isolated admin browser QA
+on:
+  push:
+    branches: [arena/b202441a-nextgen-laptops]
+permissions:
+  contents: read
+jobs:
+  browser:
+    if: contains(github.event.head_commit.message, '[run-isolated-qa]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install dependencies and browser
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Test against an in-memory mock only
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:4001
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-publishable
+        run: |
+          node tests/fixtures/mock-supabase.cjs > /tmp/mock-supabase.log 2>&1 &
+          mock_pid=$!
+          npx next dev --hostname 127.0.0.1 --port 3002 > /tmp/mock-next.log 2>&1 &
+          next_pid=$!
+          trap 'kill "$mock_pid" "$next_pid" 2>/dev/null || true' EXIT
+          for i in {1..60}; do curl -fsS http://127.0.0.1:3002/admin/login >/dev/null && break; sleep 1; done
+          node tests/admin-browser.integration.cjs
