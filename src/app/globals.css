@@ -140,3 +140,10 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
  .mobile-nav-panel a{display:block;padding:12px 10px;border-radius:5px;font-size:14px;font-weight:600;color:#273b51}
  .mobile-nav-panel a:hover,.mobile-nav-panel a:focus-visible{background:#edf6fb;color:#067ab8}
 }
+/* Equal-sized social buttons stay legible even in the narrow mobile contact column. */
+.social-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:420px}
+.social-item{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;min-width:0;height:72px;padding:8px 4px;text-align:center;white-space:nowrap;font-size:11px}
+.visit-social{margin-top:8px}
+.visit-social>span{display:block;color:#6e8398;font-size:10px;font-weight:700;letter-spacing:.12em}
+.visit-social .social-links{margin-top:10px}
+@media(max-width:680px){.visit-social .social-links{max-width:420px}}
