@@ -63,6 +63,17 @@ async function fillProduct(page,slug,title,category,large=false){
    const q=await db.from('categories').select('id,slug').eq('slug',categorySlug).maybeSingle();assert.ok(!q.error&&q.data);categoryId=q.data.id;
   });
   if(!created||!categoryId)throw new Error('Cannot continue without the QA category');
+  await check('Reject a duplicate category',async()=>{
+   await goto(page,'/admin/categories');await page.locator('input[name=name]').fill(categorySlug);
+   await page.getByRole('button',{name:'Create category'}).click();await page.waitForURL(/error=save/,{timeout:20000});
+  });
+  await check('Reject a discount equal to the original price',async()=>{
+   await goto(page,'/admin/products/new');await page.locator('input[name=title]').fill('QA invalid product');
+   await page.locator('input[name=slug]').fill(`qa-invalid-${token}`);await page.locator('select[name=category_id]').selectOption(categoryId);
+   await page.locator('input[name=price_pkr]').fill('1000');await page.locator('input[name=discount_price_pkr]').fill('1000');
+   await page.getByRole('button',{name:'Save product'}).click();await page.waitForURL(/error=invalid/,{timeout:20000});
+   assert.equal(await lookup(`qa-invalid-${token}`),null);
+  });
   const added=await check('Create an unpublished test product with a small image',async()=>{
    await fillProduct(page,productSlug,'QA AUTOMATION — NOT FOR SALE',categoryId);const p=await waitRecord(productSlug);
    assert.equal(p.is_published,false);assert.equal(p.category_id,categoryId);assert.ok(p.image_url);
@@ -70,6 +81,10 @@ async function fillProduct(page,slug,title,category,large=false){
   if(added){
    const p=await lookup(productSlug);
    if(p.image_url)uploaded.add(p.image_url);
+   await check('Uploaded image is publicly readable',async()=>{const r=await context.request.get(p.image_url);assert.equal(r.status(),200)});
+   await check('Draft product is hidden from unauthenticated shoppers',async()=>{
+    const guest=await browser.newContext();try{const response=await guest.request.get(`${base}/laptops/${productSlug}`);assert.equal(response.status(),404)}finally{await guest.close()}
+   });
    await check('Edit the test product',async()=>{
     await goto(page,`/admin/products/${encodeURIComponent(p.id)}`);await page.locator('input[name=price_pkr]').fill('12000');
     await page.locator('textarea[name=description]').fill('Automated QA edited draft. Not for sale.');
@@ -95,7 +110,7 @@ async function fillProduct(page,slug,title,category,large=false){
   if(browser)await browser.close();
   // Query only our unguessable test slugs. Never delete existing inventory.
   if(!categoryId){try{const r=await db.from('categories').select('id').eq('slug',categorySlug).maybeSingle();if(r.error)throw r.error;categoryId=r.data?.id}catch{failures++;console.error(`Could not find QA category for cleanup: ${categorySlug}`)}}
-  for(const slug of [productSlug,bigSlug]){
+  for(const slug of [productSlug,bigSlug,`qa-invalid-${token}`]){
    try{const p=await lookup(slug);if(p){if(p.image_url)uploaded.add(p.image_url);const r=await db.from('products').delete().eq('id',p.id).eq('slug',slug).eq('category_id',categoryId);if(r.error)throw r.error;console.log('Cleaned up QA product')}}catch{failures++;console.error('QA product cleanup failed; inspect the QA category in Supabase')}
   }
   for(const url of uploaded){
