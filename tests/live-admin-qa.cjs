@@ -12,7 +12,7 @@ const base='https://next-gen-laptops.vercel.app';
 const supabaseUrl='https://sqdxnxcxajcgjvmcsksp.supabase.co';
 const publicKey='sb_publishable_N3z5B9NpOOFVzHDzzZKJgQ_PgBCZwXt';
 const {QA_EMAIL:email,QA_PASSWORD:password}=process.env;
-if(!email||!password){console.error('Missing dedicated QA account secrets. No tests were run.');process.exit(1)}
+if(!email||!password){console.error('::error title=QA setup::Missing dedicated QA account secrets. No tests were run.');process.exit(1)}
 const token=randomBytes(8).toString('hex');
 const categorySlug=`qa-automation-${token}`;
 const productSlug=`qa-automation-product-${token}`;
@@ -23,7 +23,7 @@ const uploaded=new Set();
 let failures=0;
 const secrets=[email,password].filter(Boolean);
 function sanitize(message){let s=String(message).replace(/https?:\/\/\S+/g,'[url]');for(const secret of secrets)s=s.split(secret).join('[redacted]');return s.slice(0,500)}
-async function check(label,fn){try{await fn();console.log(`PASS ${label}`);return true}catch(e){failures++;console.error(`FAIL ${label}: ${sanitize(e.message)}`);return false}}
+async function check(label,fn){try{await fn();console.log(`::notice title=QA passed::${label}`);return true}catch(e){failures++;console.error(`::error title=QA failed::${label}: ${sanitize(e.message).replace(/\r?\n/g,' ')}`);return false}}
 async function lookup(slug){const {data,error}=await db.from('products').select('id,slug,title,category_id,image_url,is_published,price_pkr,description').eq('slug',slug).maybeSingle();if(error)throw new Error('Could not query QA product');return data}
 async function waitRecord(slug,exists=true){for(let i=0;i<15;i++){const p=await lookup(slug);if(Boolean(p)===exists)return p;await new Promise(r=>setTimeout(r,400))}throw new Error(`QA product ${exists?'not found':'still present'}`)}
 async function goto(page,path){await page.goto(base+path,{waitUntil:'domcontentloaded'});await page.locator('body').waitFor();}
@@ -87,7 +87,7 @@ async function fillProduct(page,slug,title,category,large=false){
   await check('Sign out and protect the dashboard',async()=>{
    await goto(page,'/admin');await page.getByRole('button',{name:'Sign out'}).click();await page.waitForURL(/\/admin\/login/);await goto(page,'/admin');assert.match(page.url(),/\/admin\/login/);
   });
- }catch(e){failures++;console.error(`Cannot complete live QA: ${sanitize(e.message)}`)}
+ }catch(e){failures++;console.error(`::error title=QA stopped::${sanitize(e.message).replace(/\r?\n/g,' ')}`)}
  finally{
   if(browser)await browser.close();
   // Query only our unguessable test slugs. Never delete existing inventory.
