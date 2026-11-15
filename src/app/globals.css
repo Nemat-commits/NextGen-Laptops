@@ -157,3 +157,4 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
  .page-transition{animation:page-enter 320ms cubic-bezier(.22,1,.36,1) both}
  @keyframes page-enter{from{opacity:.92;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 }
+.category-delete button{border:1px solid #d8b8b4;background:#fff;color:#a33327;padding:9px 13px;font-weight:700}.category-delete button:hover{background:#fff0ed}.category-row{gap:16px}.photo-help{color:var(--muted);font-size:12px;line-height:1.5}.photo-preview{display:block;max-height:180px;max-width:100%;object-fit:contain;margin-top:10px}.primary-button:disabled{opacity:.6;cursor:wait}

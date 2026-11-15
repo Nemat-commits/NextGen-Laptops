@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {inventory} from '../src/lib/inventory';
-import {emptyFilters,readFilters,writeFilters,matchesFilters,cpuFamily,generation} from '../src/lib/filters';
+import {emptyFilters,readFilters,writeFilters,matchesFilters,cpuFamily,generation,filterOptions} from '../src/lib/filters';
 const state={...emptyFilters(),brand:['Dell','HP'],cpu:['i5'],ram:['8'],storage:['256'],q:'latitude',sort:'name'};
 assert.deepEqual(readFilters(writeFilters(state)),state);
 assert.equal(cpuFamily('Intel Core i7 11th Gen'),'i7');
@@ -13,3 +13,13 @@ assert.equal(matchesFilters(dell,{...emptyFilters(),stock:['in_stock']}),false);
 assert.equal(matchesFilters(dell,{...emptyFilters(),deals:true}),false);
 assert.equal(matchesFilters({...dell,price_pkr:100000,discount_price_pkr:90000},{...emptyFilters(),min:'85000',max:'95000',deals:true}),true);
 console.log('Filter checks passed');
+
+const microsoft={...dell,brand:'Microsoft',category_id:'accessories',cpu:'Snapdragon X Elite',condition:'Refurbished'};
+const categories=[{id:'laptops',name:'Laptops',slug:'laptops'},{id:'accessories',name:'Accessories',slug:'accessories'},{id:'empty',name:'Empty category',slug:'empty'}];
+const options=filterOptions([dell,microsoft],categories);
+assert.deepEqual(options.category,['accessories','empty','laptops']);
+assert.ok(options.brand.includes('Microsoft'));
+assert.ok(options.cpu.includes('snapdragon x elite'));
+assert.ok(options.condition.includes('Refurbished'));
+assert.equal(matchesFilters(microsoft,{...emptyFilters(),brand:['Microsoft'],category:['accessories'],cpu:['snapdragon x elite']}),true);
+assert.equal(matchesFilters(dell,{...emptyFilters(),category:['empty']}),false);

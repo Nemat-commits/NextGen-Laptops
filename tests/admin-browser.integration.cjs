@@ -1,0 +1,22 @@
+// Optional local-only browser test. Uses the in-memory mock and does not access production.
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ try{
+  const page=await browser.newPage();const base='http://127.0.0.1:3002';
+  await page.goto(base+'/admin/login');await page.locator('[name=email]').fill('admin@example.test');await page.locator('[name=password]').fill('local-test-password');await page.getByRole('button',{name:'Sign in'}).click();await page.waitForURL('**/admin');
+  await page.goto(base+'/admin/categories');await page.locator('[name=name]').fill('Browser Accessories');await page.getByRole('button',{name:'Create category'}).click();await page.getByText('Browser Accessories',{exact:true}).waitFor();
+  const guest=await browser.newPage();await guest.goto(base+'/shop');assert.equal(await guest.getByLabel('Browser Accessories').count(),1);await guest.getByLabel('Browser Accessories').check();assert.match(await guest.locator('.empty').innerText(),/No matches found/);console.log('PASS new empty category visible and selectable in shop');
+  await page.goto(base+'/admin/products/new');await page.locator('[name=title]').fill('Browser Microsoft');await page.locator('[name=slug]').fill('browser-microsoft');await page.locator('[name=category_id]').selectOption({label:'Browser Accessories'});await page.locator('[name=brand]').fill('Microsoft');await page.locator('[name=cpu]').fill('Snapdragon X Elite');await page.locator('[name=is_published]').check();
+  // A real PNG larger than 2 MB exercises camera compression, not a physical camera.
+  const bytes=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=1500;const ctx=canvas.getContext('2d');const image=ctx.createImageData(canvas.width,canvas.height);crypto.getRandomValues(image.data.subarray(0,65536));for(let i=65536;i<image.data.length;i+=65536)crypto.getRandomValues(image.data.subarray(i,Math.min(i+65536,image.data.length)));ctx.putImageData(image,0,0);return canvas.toDataURL('image/png').split(',')[1]});
+  const buffer=Buffer.from(bytes,'base64');assert.ok(buffer.length>2*1024*1024);
+  await page.locator('[name=camera_file]').setInputFiles({name:'camera.png',mimeType:'image/png',buffer});await page.getByText(/Camera photo ready/).waitFor({timeout:30000});
+  const info=await page.locator('[name=camera_file]').evaluate(el=>({size:el.files[0].size,type:el.files[0].type,capture:el.getAttribute('capture')}));assert.ok(info.size<=2*1024*1024);assert.equal(info.type,'image/jpeg');assert.equal(info.capture,'environment');assert.equal(await page.getByAltText('Selected product photo preview').count(),1);console.log('PASS camera input, photo compression and preview');
+  await page.getByRole('button',{name:'Save product'}).click();await page.waitForURL('**/admin/products');assert.ok(!page.url().includes('error='));
+  await guest.goto(base+'/shop');await guest.getByLabel('Microsoft').check();await guest.getByLabel('Browser Accessories').check();assert.equal(await guest.getByText('Browser Microsoft',{exact:true}).count(),1);await guest.getByLabel('SNAPDRAGON X ELITE').check();assert.equal(await guest.getByText('Browser Microsoft',{exact:true}).count(),1);console.log('PASS new published brand, category and processor filters');
+  await page.goto(base+'/admin/categories');page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remove category Browser Accessories'}).click();await page.waitForURL('**/admin/categories?error=in-use');assert.match(await page.locator('[role=alert]').innerText(),/still contains products/);console.log('PASS category deletion protects assigned products');
+  await page.goto(base+'/admin/products');await page.getByText('Browser Microsoft',{exact:true}).click();page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete this product'}).click();await page.waitForURL('**/admin/products');await page.goto(base+'/admin/categories');page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remove category Browser Accessories'}).click();await page.waitForURL('**/admin/categories');assert.equal(await page.getByText('Browser Accessories',{exact:true}).count(),0);console.log('PASS remove empty category in browser');
+ }finally{await browser.close()}
+})().catch(e=>{console.error(e);process.exitCode=1});
