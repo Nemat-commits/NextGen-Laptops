@@ -1,17 +1,21 @@
 const http=require('node:http');
+const {randomUUID}=require('node:crypto');
 const user={id:'57e001ae-4750-4af5-97cb-a2ec6517abe7',email:'admin@example.test',role:'authenticated',aud:'authenticated',app_metadata:{},user_metadata:{},created_at:new Date().toISOString()};
 const b=x=>Buffer.from(JSON.stringify(x)).toString('base64url'); const jwt=`${b({alg:'none',typ:'JWT'})}.${b({sub:user.id,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600})}.mock`;
-let categories=[{id:'laptops',name:'Laptops',slug:'laptops'}],products=[];const objects=new Set();
+let categories=[{id:'laptops',name:'Laptops',slug:'laptops'}],products=[];const objects=new Set();let catalogFailure=false;
 http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');let data='';for await(const chunk of req)data+=chunk;let body;try{body=JSON.parse(data||'{}')}catch{body={}};const send=(code,obj,extra={})=>{res.writeHead(code,{'Content-Type':'application/json',...extra});res.end(req.method==='HEAD'?'':JSON.stringify(obj))};
 if(url.pathname==='/auth/v1/token'&&req.method==='POST'){if(body.email!==user.email||body.password!=='local-test-password')return send(400,{error:'invalid_grant',error_description:'Invalid login'});return send(200,{access_token:jwt,token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:'mock-refresh',user})}
 if(url.pathname==='/auth/v1/user')return req.headers.authorization===`Bearer ${jwt}`?send(200,user):send(401,{message:'invalid session'});
 if(url.pathname==='/auth/v1/logout')return send(204,{});
 if(url.pathname==='/rest/v1/admin_users')return send(200,req.headers.authorization===`Bearer ${jwt}`?[{user_id:user.id}]:[]);
+if(url.pathname==='/_qa/catalog-failure'&&req.method==='POST'){catalogFailure=body.enabled;return send(200,{ok:true})}
 if(url.pathname==='/_qa/storage-count')return send(200,{count:objects.size});
 if(url.pathname.startsWith('/storage/v1/object/product-images/')&&req.method==='POST'){const path=url.pathname.split('/').pop();objects.add(path);return send(200,{Key:'product-images/'+path})}
 if(url.pathname==='/storage/v1/object/product-images'&&req.method==='DELETE'){for(const path of body.prefixes||[])objects.delete(path);return send(200,[]);}
 const name=url.pathname.split('/').pop();if(!['categories','products'].includes(name))return send(404,{message:'missing mock route '+url.pathname});
+if(catalogFailure && name==='products' && req.method==='GET' && url.searchParams.get('is_published')==='eq.true')return send(503,{message:'simulated database failure'});
 let arr=name==='categories'?categories:products; const id=url.searchParams.get('id')?.replace(/^eq\./,'');let found=id?arr.filter(x=>x.id===id):arr;
+const revision=url.searchParams.get('revision')?.replace(/^eq\./,'');if(revision)found=found.filter(x=>x.revision===revision);
 if(url.searchParams.get('is_published')==='eq.true')found=found.filter(x=>x.is_published);
 if(req.method==='GET'||req.method==='HEAD')return send(200,found,{'content-range':`0-${Math.max(0,found.length-1)}/${found.length}`});
 if(req.headers.authorization!==`Bearer ${jwt}`)return send(403,{message:'not authenticated'});
@@ -25,8 +29,8 @@ function duplicate(value,exclude){
  }
  return null;
 }
-if(req.method==='POST'){const value={...body,id:body.id||'mock-'+Date.now(),extra_specs:{}};const constraint=duplicate(value);if(constraint)return send(409,{code:'23505',message:`duplicate key value violates unique constraint "${constraint}"`});if(name==='products'&&!categories.some(c=>c.id===value.category_id))return send(409,{code:'23503',message:'category missing'});arr.push(value);return send(201,[value]);}
-if(req.method==='PATCH'){if(found.length){const value={...found[0],...body};const constraint=duplicate(value,id);if(constraint)return send(409,{code:'23505',message:`duplicate key value violates unique constraint "${constraint}"`});if(name==='products'&&!categories.some(c=>c.id===value.category_id))return send(409,{code:'23503',message:'category missing'});}found.forEach(x=>Object.assign(x,body));return send(200,found);}
-if(req.method==='DELETE'){if(name==='categories'&&products.some(p=>p.category_id===id))return send(409,{code:'23503',message:'category still in use'});if(name==='products')products=products.filter(x=>x.id!==id);else categories=categories.filter(x=>x.id!==id);return send(200,found);}
+if(req.method==='POST'){const value={...body,id:body.id||'mock-'+randomUUID(),revision:randomUUID(),extra_specs:{}};if(name==='products'&&value.stock_status!=='unconfirmed')value.stock_status=value.quantity===0?'out_of_stock':'in_stock';const constraint=duplicate(value);if(constraint)return send(409,{code:'23505',message:`duplicate key value violates unique constraint "${constraint}"`});if(name==='products'&&!categories.some(c=>c.id===value.category_id))return send(409,{code:'23503',message:'category missing'});arr.push(value);return send(201,[value]);}
+if(req.method==='PATCH'){if(found.length){const value={...found[0],...body};const constraint=duplicate(value,id);if(constraint)return send(409,{code:'23505',message:`duplicate key value violates unique constraint "${constraint}"`});if(name==='products'&&!categories.some(c=>c.id===value.category_id))return send(409,{code:'23503',message:'category missing'});}found.forEach(x=>{Object.assign(x,body);if(name==='products'){x.revision=randomUUID();if(x.stock_status!=='unconfirmed')x.stock_status=x.quantity===0?'out_of_stock':'in_stock'}});return send(200,found);}
+if(req.method==='DELETE'){if(name==='categories'&&products.some(p=>p.category_id===id))return send(409,{code:'23503',message:'category still in use'});if(name==='products')products=products.filter(x=>!found.includes(x));else categories=categories.filter(x=>!found.includes(x));return send(200,found);}
 return send(405,{});
 }).listen(4001,'127.0.0.1',()=>console.log('Mock Supabase ready'));

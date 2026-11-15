@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+const db=new PGlite();
+(async()=>{try{
+ await db.exec(`create table public.products (id text primary key, quantity integer not null default 0 check(quantity>=0), stock_status text not null default 'unconfirmed' check(stock_status in ('unconfirmed','in_stock','low_stock','out_of_stock')), ram_gb integer, storage_gb integer, price_pkr integer, discount_price_pkr integer); insert into products(id,quantity,stock_status) values ('old',3,'unconfirmed');`);
+ await db.exec(await readFile('supabase/migrations/0003_inventory_integrity.sql','utf8'));
+ const old=await db.query<{revision:string;stock_status:string}>('select revision,stock_status from products where id=$1',['old']);assert.equal(old.rows[0].stock_status,'unconfirmed');
+ await db.query('insert into products(id,quantity,stock_status) values ($1,$2,$3)',['auto',0,'in_stock']);
+ let state=await db.query<{revision:string;stock_status:string}>('select revision,stock_status from products where id=$1',['auto']);assert.equal(state.rows[0].stock_status,'out_of_stock');
+ const rev=state.rows[0].revision;
+ await db.query('update products set quantity=2 where id=$1',['auto']);state=await db.query('select revision,stock_status from products where id=$1',['auto']);assert.equal(state.rows[0].stock_status,'in_stock');assert.notEqual(state.rows[0].revision,rev);
+ const stale=await db.query('update products set quantity=5 where id=$1 and revision=$2 returning id',['auto',rev]);assert.equal(stale.rows.length,0);
+ await db.query("update products set stock_status='unconfirmed',quantity=5 where id='auto'");state=await db.query('select revision,stock_status from products where id=$1',['auto']);assert.equal(state.rows[0].stock_status,'unconfirmed');
+ await assert.rejects(()=>db.query("update products set ram_gb=-1 where id='auto'"),/products_ram_nonnegative/);
+ await assert.rejects(()=>db.query("update products set storage_gb=-1 where id='auto'"),/products_storage_nonnegative/);
+ await assert.rejects(()=>db.query("update products set price_pkr=null, discount_price_pkr=1 where id='auto'"),/products_discount_requires_price/);
+ await db.query("update products set price_pkr=100,discount_price_pkr=90 where id='auto'");
+ console.log('Inventory integrity and optimistic concurrency checks passed');
+}finally{await db.close()}})().catch(e=>{console.error(e);process.exitCode=1});

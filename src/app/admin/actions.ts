@@ -30,14 +30,17 @@ export async function deleteCategory(form:FormData){
 function failure(message:string,errors:ProductFormState['errors']={}):ProductFormState{return {message,errors}}
 export async function saveProduct(_previous:ProductFormState,form:FormData):Promise<ProductFormState>{
  const db=await requireAdmin();const id=String(form.get('id')||'').trim();
+ const revision=String(form.get('revision')||'').trim();
  const {values:v,numbers:n,errors,file}=validateProduct(form);
  if(Object.keys(errors).length)return failure('Please correct the highlighted fields. If you selected a photo, select it again before saving.',errors);
  const fail=(message:string,fieldErrors:ProductFormState['errors']={})=>failure(message+(file?' Please select the photo again before saving.':''),fieldErrors);
+ if(id&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(revision))return fail('This edit form is out of date. Copy any changes, then refresh the page before saving.');
  let oldSlug:string|undefined;
  if(id){
-  const {data,error}=await db.from('products').select('id,slug').eq('id',id).maybeSingle();
+  const {data,error}=await db.from('products').select('id,slug,revision').eq('id',id).maybeSingle();
   if(error)return fail('Could not load the product. Please try again.');
   if(!data)return fail('This product no longer exists. Return to Products and refresh the list.');
+  if(data.revision!==revision)return fail('This product was changed by someone else. Copy your changes, refresh the page, and review the latest version before saving.');
   oldSlug=data.slug;
  }
  let image=v.image_url||null,uploadedPath:string|undefined;
@@ -47,8 +50,8 @@ export async function saveProduct(_previous:ProductFormState,form:FormData):Prom
   if(error)return fail('The photo could not be uploaded. Check your connection and try again; select the photo again.',{image_file:'Photo upload failed.'});
   image=db.storage.from('product-images').getPublicUrl(uploadedPath).data.publicUrl;
  }
- const item={title:v.title,slug:v.slug,category_id:v.category_id,brand:v.brand,cpu:v.cpu,ram_gb:n.ram_gb,storage_gb:n.storage_gb,quantity:n.quantity??0,price_pkr:n.price_pkr,discount_price_pkr:n.discount_price_pkr,stock_status:v.stock_status,is_published:v.is_published,description:v.description,condition:v.condition||null,image_url:image,image_source:v.image_source||null};
- const query=id?db.from('products').update(item).eq('id',id):db.from('products').insert(item);
+ const item={title:v.title,slug:v.slug,category_id:v.category_id,brand:v.brand,cpu:v.cpu,ram_gb:n.ram_gb,storage_gb:n.storage_gb,quantity:n.quantity??0,price_pkr:n.price_pkr,discount_price_pkr:n.discount_price_pkr,stock_status:v.stock_status==='unconfirmed'?'unconfirmed':(n.quantity===0?'out_of_stock':'in_stock'),is_published:v.is_published,description:v.description,condition:v.condition||null,image_url:image,image_source:v.image_source||null};
+ const query=id?db.from('products').update(item).eq('id',id).eq('revision',revision):db.from('products').insert(item);
  const {data,error}=await query.select('id');
  if(error){
   // A database constraint error guarantees the write was rejected. Never remove
@@ -62,12 +65,12 @@ export async function saveProduct(_previous:ProductFormState,form:FormData):Prom
   if(error.code==='23514'||error.code==='22003'||error.code==='22P02')return fail('Some values could not be saved. Check the price, quantity and specifications and try again.');
   return fail('The product could not be confirmed as saved. Check the product list before retrying; if you selected a photo, select it again.');
  }
- if(!data?.length){if(uploadedPath){const cleanup=await db.storage.from('product-images').remove([uploadedPath]);if(cleanup.error)console.error('Could not clean up unused upload')}return fail('This product could not be found or updated. Refresh the product list before retrying.')}
+ if(!data?.length){if(uploadedPath){const cleanup=await db.storage.from('product-images').remove([uploadedPath]);if(cleanup.error)console.error('Could not clean up unused upload')}return fail('This product was changed or removed while you were editing. Copy your changes, then refresh the product list before retrying.')}
  revalidatePath('/');revalidatePath('/shop');revalidatePath('/laptops/'+v.slug);if(oldSlug&&oldSlug!==v.slug)revalidatePath('/laptops/'+oldSlug);redirect('/admin/products');
 }
 export async function deleteProduct(form:FormData){
- const db=await requireAdmin();const id=String(form.get('id')||'').trim();if(!id)redirect('/admin/products?error=delete');
- const {data,error}=await db.from('products').delete().eq('id',id).select('id,slug');
- if(error)redirect('/admin/products?error=delete');if(!data?.length)redirect('/admin/products?error=missing');
+ const db=await requireAdmin();const id=String(form.get('id')||'').trim(),revision=String(form.get('revision')||'').trim();if(!id||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(revision))redirect('/admin/products?error=stale');
+ const {data,error}=await db.from('products').delete().eq('id',id).eq('revision',revision).select('id,slug');
+ if(error)redirect('/admin/products?error=delete');if(!data?.length)redirect('/admin/products?error=stale');
  revalidatePath('/');revalidatePath('/shop');if(data[0].slug)revalidatePath('/laptops/'+data[0].slug);redirect('/admin/products');
 }

@@ -11,11 +11,11 @@ import {relatedProducts} from '@/lib/related';
 import {manufacturerDetails} from '@/lib/manufacturer-details';
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
- const {slug}=await params;const {products}=await catalog();const p=products.find(x=>x.slug===slug);
+ const {slug}=await params;const {products,error}=await catalog();if(error)return {title:'Product temporarily unavailable'};const p=products.find(x=>x.slug===slug);
  return p?{title:p.title,description:p.description,openGraph:{title:p.title,description:p.description,...(p.image_url?{images:[p.image_url]}:{})}}:{title:'Product not found'};
 }
 export default async function ProductPage({params}:{params:Promise<{slug:string}>}){
- const {slug}=await params;const {products,categories}=await catalog();const p=products.find(x=>x.slug===slug);if(!p)notFound();
+ const {slug}=await params;const {products,categories,error}=await catalog();if(error)throw new Error('Catalog temporarily unavailable');const p=products.find(x=>x.slug===slug);if(!p)notFound();
  const reference=modelReference(p), manufacturerSpecs=manufacturerDetails(p), related=relatedProducts(p,products);
  const imageSource=p.image_source?.trim();
  const wa=(process.env.NEXT_PUBLIC_SHOP_WHATSAPP || '923215744034').replace(/\D/g,'');

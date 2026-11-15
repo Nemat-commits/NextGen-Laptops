@@ -2,7 +2,7 @@ export type ProductValues={title:string;slug:string;category_id:string;brand:str
 export type ProductField=keyof ProductValues|'image_file';
 export type ProductFormState={message:string;errors:Partial<Record<ProductField,string>>};
 export const initialProductFormState:ProductFormState={message:'',errors:{}};
-const statuses=['unconfirmed','in_stock','low_stock','out_of_stock'];
+const statuses=['unconfirmed','automatic','in_stock','low_stock','out_of_stock'];
 const maxInteger=2147483647;
 export function validateProduct(form:FormData){
  const text=(key:string)=>String(form.get(key)||'').trim();
@@ -18,6 +18,7 @@ export function validateProduct(form:FormData){
   const value=values[key];const n=value===''?null:Number(value);numbers[key]=n;
   if(value!==''&&(!/^\d+$/.test(value)||!Number.isSafeInteger(n)||n!>maxInteger))errors[key]=`${label} must be a whole number from 0 to ${maxInteger.toLocaleString('en-PK')}.`;
  }
+ if(values.quantity==='')errors.quantity='Enter the number of units available, or 0 if none.';
  if(!errors.price_pkr&&!errors.discount_price_pkr&&numbers.discount_price_pkr!==null&&(numbers.price_pkr===null||numbers.discount_price_pkr>=numbers.price_pkr))errors.discount_price_pkr='Enter an original price first; the discount price must be lower than it.';
  if(!statuses.includes(values.stock_status))errors.stock_status='Choose a valid availability status.';
  for(const [key,label] of [['image_url','Image URL'],['image_source','Manufacturer image source URL']] as const){

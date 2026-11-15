@@ -11,6 +11,8 @@ assert.ok(validateProduct(form({price_pkr:'100',discount_price_pkr:'100'})).erro
 assert.ok(validateProduct(form({price_pkr:'',discount_price_pkr:'0'})).errors.discount_price_pkr);
 assert.deepEqual(validateProduct(form({price_pkr:'100',discount_price_pkr:'0'})).errors,{});
 assert.ok(validateProduct(form({category_id:''})).errors.category_id);
+assert.ok(validateProduct(form({quantity:''})).errors.quantity);
+assert.deepEqual(validateProduct(form({stock_status:'automatic',quantity:'0'})).errors,{});
 assert.ok(validateProduct(form({stock_status:'bad'})).errors.stock_status);
 assert.ok(validateProduct(form({image_url:'http://unsafe.test/image.jpg'})).errors.image_url);
 assert.ok(validateProduct(form({image_source:'https://u:p@example.com/a'})).errors.image_source);
