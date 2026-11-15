@@ -112,7 +112,7 @@ body{background:#f7f9fc}
 @media(max-width:680px){.visit-photo{height:auto}.visit-map{height:260px}}
 /* About Ashar and optional social profiles */
 .about-section{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,6vw,90px);align-items:center;padding:72px 0 90px;border-top:1px solid var(--line)}
-.about-copy h2{font-size:clamp(32px,3.5vw,48px);line-height:1.12;letter-spacing:-.04em;font-weight:650;margin:14px 0 22px}
+.about-copy h1{font-size:clamp(32px,3.5vw,48px);line-height:1.12;letter-spacing:-.04em;font-weight:650;margin:14px 0 22px}
 .about-copy p{font-size:15px;color:#647487;line-height:1.8;max-width:620px;margin:0 0 14px}
 .about-phone{display:inline-flex;align-items:center;gap:10px;margin-top:15px;color:#007cb9;font-size:14px;font-weight:650}
 .about-phone:hover{color:#004f81}
@@ -128,4 +128,4 @@ body{background:#f7f9fc}
 a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 .footer-top .social-links{margin-top:15px}.footer-top .social-links a.social-item,.footer-top .social-links .social-item{background:#1e3047;border-color:#344b61;color:#dceaf6}.footer-top .social-links .social-pending{color:#a3b5c6}.footer-top .social-links .social-item small{color:#a5b4c6}
 .detail-home{display:flex;justify-content:center;margin-top:42px}.detail-home .outline-button{margin:0;border-radius:6px;background:white;gap:10px}.detail-home .outline-button:hover{background:#eaf4fb}
-@media(max-width:680px){.about-section{grid-template-columns:1fr;gap:24px;padding:48px 0 56px}.about-copy h2{font-size:32px}.about-copy p{font-size:14px}.about-side{padding:26px}.about-number{font-size:55px}.about-phone{font-size:13px}.detail-home{margin-top:30px}}
+@media(max-width:680px){.about-section{grid-template-columns:1fr;gap:24px;padding:48px 0 56px}.about-copy h1{font-size:32px}.about-copy p{font-size:14px}.about-side{padding:26px}.about-number{font-size:55px}.about-phone{font-size:13px}.detail-home{margin-top:30px}}
