@@ -92,8 +92,8 @@ body{background:#f7f9fc}
  .featured-grid [data-reveal]:nth-child(4n+4){transition-delay:180ms}
 }
 .visit-section{display:block}
-.visit-intro{display:grid;grid-template-columns:1.25fr .75fr;gap:70px}
-.visit-media{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:36px}
+.visit-intro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.visit-media{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:36px}
 .visit-photo,.visit-map{position:relative;margin:0;min-width:0;height:320px;overflow:hidden;border-radius:8px;background:#cddfea;box-shadow:0 12px 30px #173c5a16}
 .visit-photo img{object-fit:cover;object-position:center 34%}
 .visit-photo figcaption{position:absolute;bottom:0;left:0;right:0;color:white;padding:35px 18px 16px;font-size:10px;font-weight:700;letter-spacing:.12em;background:linear-gradient(transparent,#07182acb)}
@@ -147,3 +147,13 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 .visit-social>span{display:block;color:#6e8398;font-size:10px;font-weight:700;letter-spacing:.12em}
 .visit-social .social-links{margin-top:10px}
 @media(max-width:680px){.visit-social .social-links{max-width:420px}}
+/* A direct phone call remains one tap away; WhatsApp sits in the header. */
+.float-phone{width:54px;height:54px;background:#087dc5;color:white}
+.float-phone:hover{background:#06659f}
+.header-call svg{color:#168b4e}
+@media(max-width:680px){.float-phone{width:50px;height:50px}}
+/* A short entrance on page navigation; no animation is applied for reduced motion. */
+@media(prefers-reduced-motion:no-preference){
+ .page-transition{animation:page-enter 320ms cubic-bezier(.22,1,.36,1) both}
+ @keyframes page-enter{from{opacity:.92;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+}
