@@ -19,3 +19,5 @@ The optional `tests/admin-browser.integration.cjs` exercises category filters, s
 Run `npx tsx tests/product-uniqueness.test.ts` to verify the SQL indexes using an isolated PostgreSQL-compatible PGlite database; no production records are touched. `tests/product-validation.test.ts` covers form validation.
 
 `npx tsx tests/inventory-integrity.test.ts` exercises revision changes, stale writes, automatic availability, explicit unconfirmed status, and direct-database checks in an isolated PostgreSQL-compatible PGlite instance. The isolated browser suite also exercises stale tabs, stale deletes, stock transitions, and product-page database failure recovery.
+
+Homepage and URL coverage includes `tests/homepage-brands.test.ts`, `tests/featured.test.ts`, `tests/homepage-migration.test.ts`, and `tests/product-slug.test.ts`. The mock integration test forces a generated-slug collision and checks retry and stable edit URLs; the isolated browser suite selects five products, checks draft visibility, and navigates a brand containing special characters.

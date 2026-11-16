@@ -4,6 +4,7 @@ import {revalidatePath} from 'next/cache';
 import {supabase,configured} from '@/lib/supabase';
 import {requireAdmin} from '@/lib/admin';
 import {validateProduct,type ProductFormState} from '@/lib/product-validation';
+import {productSlugBase} from '@/lib/product-slug';
 
 export async function login(form:FormData){
  if(!configured())redirect('/admin/login?error=configuration');
@@ -31,6 +32,10 @@ function failure(message:string,errors:ProductFormState['errors']={}):ProductFor
 export async function saveProduct(_previous:ProductFormState,form:FormData):Promise<ProductFormState>{
  const db=await requireAdmin();const id=String(form.get('id')||'').trim();
  const revision=String(form.get('revision')||'').trim();
+ const automaticSlug=!id&&!String(form.get('slug')||'').trim();
+ const slugBase=productSlugBase(String(form.get('title')||''),String(form.get('cpu')||''),String(form.get('ram_gb')||''),String(form.get('storage_gb')||''));
+ const makeSlug=()=>`${slugBase}-${crypto.randomUUID().slice(0,8)}`;
+ if(automaticSlug)form.set('slug',makeSlug());
  const {values:v,numbers:n,errors,file}=validateProduct(form);
  if(Object.keys(errors).length)return failure('Please correct the highlighted fields. If you selected a photo, select it again before saving.',errors);
  const fail=(message:string,fieldErrors:ProductFormState['errors']={})=>failure(message+(file?' Please select the photo again before saving.':''),fieldErrors);
@@ -50,9 +55,12 @@ export async function saveProduct(_previous:ProductFormState,form:FormData):Prom
   if(error)return fail('The photo could not be uploaded. Check your connection and try again; select the photo again.',{image_file:'Photo upload failed.'});
   image=db.storage.from('product-images').getPublicUrl(uploadedPath).data.publicUrl;
  }
- const item={title:v.title,slug:v.slug,category_id:v.category_id,brand:v.brand,cpu:v.cpu,ram_gb:n.ram_gb,storage_gb:n.storage_gb,quantity:n.quantity??0,price_pkr:n.price_pkr,discount_price_pkr:n.discount_price_pkr,stock_status:v.stock_status==='unconfirmed'?'unconfirmed':(n.quantity===0?'out_of_stock':'in_stock'),is_published:v.is_published,description:v.description,condition:v.condition||null,image_url:image,image_source:v.image_source||null};
- const query=id?db.from('products').update(item).eq('id',id).eq('revision',revision):db.from('products').insert(item);
- const {data,error}=await query.select('id');
+ const item={title:v.title,slug:v.slug,category_id:v.category_id,brand:v.brand,cpu:v.cpu,ram_gb:n.ram_gb,storage_gb:n.storage_gb,quantity:n.quantity??0,price_pkr:n.price_pkr,discount_price_pkr:n.discount_price_pkr,stock_status:v.stock_status==='unconfirmed'?'unconfirmed':(n.quantity===0?'out_of_stock':'in_stock'),is_published:v.is_published,is_featured:v.is_featured,description:v.description,condition:v.condition||null,image_url:image,image_source:v.image_source||null};
+ let {data,error}=await (id?db.from('products').update(item).eq('id',id).eq('revision',revision):db.from('products').insert(item)).select('id');
+ // The database remains the arbiter: retry a generated slug collision, including concurrent inserts.
+ for(let attempt=0;automaticSlug&&error?.code==='23505'&&/slug/i.test(`${error.message||''} ${error.details||''}`)&&attempt<3;attempt++){
+  item.slug=makeSlug();v.slug=item.slug;({data,error}=await db.from('products').insert(item).select('id'));
+ }
  if(error){
   // A database constraint error guarantees the write was rejected. Never remove
   // a file on an ambiguous network failure: the product might have been saved.

@@ -168,3 +168,6 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 @media(max-width:400px){.admin-brand img{width:115px}.admin-brand span{font-size:9px}.admin-bar-actions{font-size:11px}.admin-bar-actions button{padding:9px}.admin-bar-inner{column-gap:7px}}
 .form .field-error{color:#a1261c;font-size:12px;font-weight:650}.form input[aria-invalid=true],.form select[aria-invalid=true],.form textarea[aria-invalid=true]{border-color:#b22c21;box-shadow:0 0 0 1px #b22c21}
 .clear-photo{border:0;background:none;color:#076da4;padding:4px 0;font-size:12px;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+
+/* Allow any number of brands and long names without overflowing mobile cards. */
+.brand-links{grid-template-columns:repeat(3,minmax(0,1fr))}.brand-links strong{overflow-wrap:anywhere;max-width:100%}

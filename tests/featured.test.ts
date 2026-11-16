@@ -9,3 +9,7 @@ assert.equal(featuredProducts([]).length,0);
 assert.equal(featuredProducts(inventory,2).length,2);
 assert.ok(featuredProducts(inventory).every(p=>p.is_published&&p.image_url));
 console.log('Featured product checks passed');
+const selected=inventory.slice(0,6).map((p,i)=>({...p,is_featured:true,is_published:true,image_url:i===0?null:p.image_url}));
+assert.equal(featuredProducts(selected).length,6,'Manual selections are not capped at four and may use placeholders');
+assert.equal(featuredProducts([...selected,{...inventory[7],is_featured:true,is_published:false}]).length,6,'Drafts must not appear');
+assert.equal(featuredProducts([{...inventory[0],is_featured:true,is_published:false},...inventory]).length,4,'Fallback if there are no published selections');

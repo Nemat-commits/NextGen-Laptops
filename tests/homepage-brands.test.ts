@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {availableBrands} from '../src/lib/brands';
+import {inventory} from '../src/lib/inventory';
+import {emptyFilters,matchesFilters,filterOptions} from '../src/lib/filters';
+const [one,two,three]=inventory;
+const products=[{...one,brand:'  ACME   Tech ',is_published:true},{...two,brand:'acme tech',is_published:true},{...three,brand:'Hidden',is_published:false}];
+assert.deepEqual(availableBrands(products),['ACME Tech']);
+assert.deepEqual(filterOptions(products,[]).brand,['ACME Tech']);
+const f={...emptyFilters(),brand:['ACME Tech']};assert.ok(matchesFilters(products[0],f));assert.ok(matchesFilters(products[1],f));
+console.log('Homepage brands and matching checks passed');
