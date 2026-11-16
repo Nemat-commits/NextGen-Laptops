@@ -1,4 +1,4 @@
-export type ProductValues={title:string;slug:string;category_id:string;brand:string;cpu:string;ram_gb:string;storage_gb:string;price_pkr:string;discount_price_pkr:string;quantity:string;stock_status:string;condition:string;description:string;image_url:string;image_source:string;is_published:boolean};
+export type ProductValues={title:string;slug:string;category_id:string;brand:string;cpu:string;ram_gb:string;storage_gb:string;price_pkr:string;discount_price_pkr:string;quantity:string;stock_status:string;condition:string;description:string;image_url:string;image_source:string;is_published:boolean;is_featured:boolean};
 export type ProductField=keyof ProductValues|'image_file';
 export type ProductFormState={message:string;errors:Partial<Record<ProductField,string>>};
 export const initialProductFormState:ProductFormState={message:'',errors:{}};
@@ -6,7 +6,7 @@ const statuses=['unconfirmed','automatic','in_stock','low_stock','out_of_stock']
 const maxInteger=2147483647;
 export function validateProduct(form:FormData){
  const text=(key:string)=>String(form.get(key)||'').trim();
- const values:ProductValues={title:text('title'),slug:text('slug').toLowerCase(),category_id:text('category_id'),brand:text('brand'),cpu:text('cpu'),ram_gb:text('ram_gb'),storage_gb:text('storage_gb'),price_pkr:text('price_pkr'),discount_price_pkr:text('discount_price_pkr'),quantity:text('quantity'),stock_status:text('stock_status'),condition:text('condition'),description:text('description'),image_url:text('image_url'),image_source:text('image_source'),is_published:form.get('is_published')==='on'};
+ const values:ProductValues={title:text('title'),slug:text('slug').toLowerCase(),category_id:text('category_id'),brand:text('brand'),cpu:text('cpu'),ram_gb:text('ram_gb'),storage_gb:text('storage_gb'),price_pkr:text('price_pkr'),discount_price_pkr:text('discount_price_pkr'),quantity:text('quantity'),stock_status:text('stock_status'),condition:text('condition'),description:text('description'),image_url:text('image_url'),image_source:text('image_source'),is_published:form.get('is_published')==='on',is_featured:form.get('is_featured')==='on'};
  const errors:ProductFormState['errors']={};
  if(!values.title)errors.title='Enter a product name.';else if(values.title.length>200)errors.title='Keep the product name under 200 characters.';
  if(!values.slug)errors.slug='Enter a URL slug.';else if(values.slug.length>200||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug))errors.slug='Use lowercase letters, numbers and single hyphens, with no spaces or hyphen at either end.';

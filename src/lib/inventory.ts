@@ -1,4 +1,4 @@
-export type Product = { revision?:string; id:string; slug:string; title:string; brand:string; category_id:string; cpu:string; ram_gb:number|null; storage_gb:number|null; quantity:number; source_rows?:number[]; price_pkr:number|null; discount_price_pkr:number|null; stock_status:string; is_published:boolean; description:string; image_url:string|null; image_source:string|null; condition:string|null; extra_specs?:Record<string,string> };
+export type Product = { revision?:string; is_featured?:boolean; id:string; slug:string; title:string; brand:string; category_id:string; cpu:string; ram_gb:number|null; storage_gb:number|null; quantity:number; source_rows?:number[]; price_pkr:number|null; discount_price_pkr:number|null; stock_status:string; is_published:boolean; description:string; image_url:string|null; image_source:string|null; condition:string|null; extra_specs?:Record<string,string> };
 export type Category = {id:string; name:string; slug:string};
 export const defaultCategories:Category[]=[{id:'laptops',name:'Laptops',slug:'laptops'}];
 // Transcription of the supplied numbered inventory. Each entry represents one listed unit.

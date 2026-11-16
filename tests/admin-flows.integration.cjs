@@ -14,6 +14,13 @@ assert.equal(await post('/admin/categories',catAction,{name:'QA Accessories'}),'
 let duplicateSlug=await post('/admin/products/new',save,{...p,title:'Other product',cpu:'Different CPU'});assert.match(duplicateSlug,/URL slug is already used/);
 let duplicateConfig=await post('/admin/products/new',save,{...p,title:'   qa   PRODUCT   ',cpu:'  test CPU  ',slug:'different-slug'});assert.match(duplicateConfig,/product configuration already exists/);
 assert.match(duplicateConfig,/name, processor, RAM and storage combination is already listed/);console.log('PASS duplicate category, slug and configuration rejected with explanations');
+await fetch('http://127.0.0.1:4001/_qa/slug-collision',{method:'POST'});
+let auto=await post('/admin/products/new',save,{...p,title:'Auto Laptop',cpu:'Test CPU',slug:'',is_featured:'on'});assert.equal(auto,'/admin/products');
+let autoRows=await(await fetch('http://127.0.0.1:4001/rest/v1/products')).json();let autoItem=autoRows.find(x=>x.title==='Auto Laptop');assert.match(autoItem.slug,/^auto-laptop-test-cpu-8gb-256gb-[a-f0-9]{8}$/);assert.equal(autoItem.is_featured,true);
+assert.equal(await post('/admin/products/new',save,{...p,title:'Auto Laptop',cpu:'Test CPU',ram_gb:'16',slug:'',is_featured:'on'}),'/admin/products');
+autoRows=await(await fetch('http://127.0.0.1:4001/rest/v1/products')).json();assert.equal(new Set(autoRows.map(x=>x.slug)).size,autoRows.length);
+let autoEdit=await get('/admin/products/'+autoItem.id);let autoSave=action(autoEdit.html,'name="title"');assert.equal(await post('/admin/products/'+autoItem.id,autoSave,{...p,id:autoItem.id,revision:autoItem.revision,title:'Auto Laptop renamed',slug:autoItem.slug,is_featured:'on'}),'/admin/products');autoRows=await(await fetch('http://127.0.0.1:4001/rest/v1/products')).json();assert.equal(autoRows.find(x=>x.id===autoItem.id).slug,autoItem.slug);console.log('PASS automatic slug collision retry, unique variants, homepage selection and stable edit URL');
+
 assert.equal(await post('/admin/categories',removeCategory,{id:cat.id}),'/admin/categories?error=in-use');console.log('PASS cannot delete category with products');
 let edit=await get('/admin/products/'+item.id);save=action(edit.html,'name="title"');assert.equal(await post('/admin/products/'+item.id,save,{...p,id:item.id,revision:item.revision,title:'QA Edited',price_pkr:'11000',discount_price_pkr:'9000'}),'/admin/products');db=await(await fetch('http://127.0.0.1:4001/rest/v1/products')).json();assert.equal(db[0].title,'QA Edited');console.log('PASS edit product retaining official image');
 let uploadPage=await get('/admin/products/new');let uploadAction=action(uploadPage.html,'name="title"');
