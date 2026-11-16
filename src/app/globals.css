@@ -171,3 +171,29 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 
 /* Allow any number of brands and long names without overflowing mobile cards. */
 .brand-links{grid-template-columns:repeat(3,minmax(0,1fr))}.brand-links strong{overflow-wrap:anywhere;max-width:100%}
+
+/* Storefront navigation search: visible on every screen, including phones. */
+.header{gap:clamp(14px,2vw,28px)}
+.header .nav{gap:clamp(12px,1.4vw,22px);white-space:nowrap;flex:none}
+.header .logo,.header .header-right{flex:none}
+.header-search{height:42px;display:flex;align-items:center;flex:1 1 190px;min-width:140px;max-width:270px;margin-left:auto;border:1px solid #d6e3ed;border-radius:7px;background:#f7fafc;transition:border-color .2s,box-shadow .2s}
+.header-search:focus-within{border-color:#149fd8;box-shadow:0 0 0 3px #149fd820}
+.header-search input{min-width:0;flex:1;width:100%;border:0;outline:0;background:transparent;padding:0 0 0 13px;color:#1c3147;font-size:13px}
+.header-search input::placeholder{color:#74889a}
+.header-search button{width:43px;height:40px;display:grid;place-items:center;flex:none;border:0;background:transparent;color:#087dbb;border-radius:6px}
+.header-search button:hover{background:#e6f4fc}
+.header .header-right{margin-left:0;gap:14px}
+@media(max-width:1100px){
+ .header{height:auto;min-height:78px;flex-wrap:wrap;row-gap:0;padding-top:8px;padding-bottom:10px}
+ .header .header-right{margin-left:auto}
+ .header-search{order:3;flex:1 0 100%;max-width:none;margin:4px 0 0}
+}
+@media(max-width:680px){
+ .header{min-height:0;padding-top:6px;padding-bottom:10px}
+ .header-search{margin-top:3px}
+}
+@media(min-width:681px) and (max-width:900px){
+ .header .logo img{width:155px;height:auto}
+ .header .nav{font-size:13px;gap:11px}
+ .header-call span{display:none}
+}
