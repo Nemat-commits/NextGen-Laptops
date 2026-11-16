@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {inventory,defaultCategories} from '../src/lib/inventory';
+import {adminBrands,emptyAdminFilters,filterAdminProducts,type AdminProduct} from '../src/lib/admin-product-filters';
+const a:AdminProduct={...inventory[0],brand:' Dell ',is_published:true,is_featured:false,stock_status:'in_stock'};
+const b:AdminProduct={...a,id:'b',title:'Wireless Mouse',slug:'wireless-mouse',brand:'dell',category_id:'accessories',cpu:'',ram_gb:null,storage_gb:null,is_published:false,is_featured:true,stock_status:'unconfirmed'};
+const c:AdminProduct={...a,id:'c',brand:'HP',title:'HP laptop',stock_status:'out_of_stock'};
+const products=[a,b,c],categories=[...defaultCategories,{id:'accessories',name:'Accessories',slug:'accessories'}];
+const find=(f:Partial<ReturnType<typeof emptyAdminFilters>>)=>filterAdminProducts(products,categories,{...emptyAdminFilters(),...f}).map(x=>x.id);
+assert.deepEqual(adminBrands(products),['Dell','HP']);
+assert.deepEqual(find({query:'WIRELESS accessories'}),['b']);
+assert.deepEqual(find({query:'wireless-mouse'}),['b']);
+assert.deepEqual(find({query:'mouse',brand:'DELL',category:'accessories',publication:'draft',stock:'unconfirmed',featured:'featured'}),['b']);
+assert.deepEqual(find({publication:'published'}),[a.id,'c']);
+assert.deepEqual(find({featured:'not_featured',stock:'out_of_stock'}),['c']);
+assert.deepEqual(find({query:'nonexistent'}),[]);
+assert.deepEqual(find({}),[a.id,'b','c']);
+console.log('Admin product search and filters checks passed');

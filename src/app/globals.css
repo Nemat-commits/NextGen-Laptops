@@ -197,3 +197,14 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
  .header .nav{font-size:13px;gap:11px}
  .header-call span{display:none}
 }
+
+/* Search and filters in the private inventory, separate from the storefront. */
+.admin-product-tools{background:#fff;border:1px solid #dce7ef;border-radius:10px;padding:20px;display:grid;gap:16px}
+.admin-product-tools label{display:grid;gap:7px;color:#526778;font-size:12px;font-weight:700}
+.admin-product-tools input,.admin-product-tools select{width:100%;min-width:0;height:42px;border:1px solid #c8dbe7;border-radius:6px;background:#fff;padding:0 11px;color:#1c3147;font:inherit;font-size:14px;font-weight:400}
+.admin-product-tools input:focus-visible,.admin-product-tools select:focus-visible,.admin-results-bar button:focus-visible{outline:3px solid #149fd880;outline-offset:2px}
+.admin-product-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.admin-results-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:#526778}
+.admin-results-bar p{margin:0}.admin-results-bar button{border:0;background:none;color:#087bb9;font-weight:700;text-decoration:underline}.admin-results-bar button:disabled{opacity:.45;cursor:default}
+@media(max-width:900px){.admin-product-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.admin-product-tools{padding:15px}.admin-product-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-results-bar{flex-wrap:wrap}}

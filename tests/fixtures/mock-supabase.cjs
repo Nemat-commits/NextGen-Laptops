@@ -18,7 +18,7 @@ if(catalogFailure && name==='products' && req.method==='GET' && url.searchParams
 let arr=name==='categories'?categories:products; const id=url.searchParams.get('id')?.replace(/^eq\./,'');let found=id?arr.filter(x=>x.id===id):arr;
 const revision=url.searchParams.get('revision')?.replace(/^eq\./,'');if(revision)found=found.filter(x=>x.revision===revision);
 if(url.searchParams.get('is_published')==='eq.true')found=found.filter(x=>x.is_published);
-if(req.method==='GET'||req.method==='HEAD')return send(200,found,{'content-range':`0-${Math.max(0,found.length-1)}/${found.length}`});
+if(req.method==='GET'||req.method==='HEAD'){const count=found.length,offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||count);found=found.slice(offset,offset+limit);return send(200,found,{'content-range':`${offset}-${Math.max(offset,offset+found.length-1)}/${count}`});}
 if(req.headers.authorization!==`Bearer ${jwt}`)return send(403,{message:'not authenticated'});
 const norm=x=>String(x??'').trim().replace(/\s+/g,' ').toLowerCase();
 function duplicate(value,exclude){
