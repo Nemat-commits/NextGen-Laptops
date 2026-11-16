@@ -14,7 +14,9 @@ export function filterAdminProducts(products:AdminProduct[],categories:Category[
  const tokens=normalize(f.query).split(' ').filter(Boolean);
  const names=new Map(categories.map(c=>[c.id,c.name]));
  return products.filter(p=>{
-  const search=normalize([p.title,p.slug,p.brand,p.cpu,names.get(p.category_id),p.ram_gb!=null?`${p.ram_gb} GB RAM`:null,p.storage_gb!=null?`${p.storage_gb} GB storage`:null].filter(Boolean).join(' '));
-  return tokens.every(t=>search.includes(t))&&(!f.category||p.category_id===f.category)&&(!f.brand||normalizeBrand(p.brand||'')===normalizeBrand(f.brand))&&(!f.publication||(f.publication==='published'?p.is_published:!p.is_published))&&(!f.stock||p.stock_status===f.stock)&&(!f.featured||(f.featured==='featured'?!!p.is_featured:!p.is_featured));
+  const search=normalize([p.title,p.brand,p.cpu,names.get(p.category_id),p.ram_gb!=null?`${p.ram_gb} GB RAM`:null,p.storage_gb!=null?`${p.storage_gb} GB storage`:null].filter(Boolean).join(' '));
+  // Random suffixes in generated URLs must not make unrelated numeric searches match.
+  const matchesQuery=normalize(f.query)===normalize(p.slug)||tokens.every(t=>/^\d+$/.test(t)?new RegExp(`(^|[^0-9])${t}([^0-9]|$)`).test(search):search.includes(t));
+  return matchesQuery&&(!f.category||p.category_id===f.category)&&(!f.brand||normalizeBrand(p.brand||'')===normalizeBrand(f.brand))&&(!f.publication||(f.publication==='published'?p.is_published:!p.is_published))&&(!f.stock||p.stock_status===f.stock)&&(!f.featured||(f.featured==='featured'?!!p.is_featured:!p.is_featured));
  });
 }

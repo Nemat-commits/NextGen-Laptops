@@ -15,3 +15,6 @@ assert.deepEqual(find({featured:'not_featured',stock:'out_of_stock'}),['c']);
 assert.deepEqual(find({query:'nonexistent'}),[]);
 assert.deepEqual(find({}),[a.id,'b','c']);
 console.log('Admin product search and filters checks passed');
+const withRandomSlug={...a,slug:'dell-laptop-1236abcd',ram_gb:16,storage_gb:256,title:'Dell Laptop',cpu:'i5'};
+assert.deepEqual(filterAdminProducts([withRandomSlug],categories,{...emptyAdminFilters(),query:'6'}),[]);
+assert.equal(filterAdminProducts([withRandomSlug],categories,{...emptyAdminFilters(),query:'16'}).length,1);
