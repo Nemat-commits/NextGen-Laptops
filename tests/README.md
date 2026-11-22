@@ -21,3 +21,5 @@ Run `npx tsx tests/product-uniqueness.test.ts` to verify the SQL indexes using a
 `npx tsx tests/inventory-integrity.test.ts` exercises revision changes, stale writes, automatic availability, explicit unconfirmed status, and direct-database checks in an isolated PostgreSQL-compatible PGlite instance. The isolated browser suite also exercises stale tabs, stale deletes, stock transitions, and product-page database failure recovery.
 
 Homepage and URL coverage includes `tests/homepage-brands.test.ts`, `tests/featured.test.ts`, `tests/homepage-migration.test.ts`, and `tests/product-slug.test.ts`. The mock integration test forces a generated-slug collision and checks retry and stable edit URLs; the isolated browser suite selects five products, checks draft visibility, and navigates a brand containing special characters.
+
+`tests/hero-carousel.browser.cjs` checks that pointer and touch interaction do not stop the hero slideshow, while keyboard focus and reduced-motion preferences pause it. It uses Playwright and the same isolated local server as the browser suite; it never accesses production.
