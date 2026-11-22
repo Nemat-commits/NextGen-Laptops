@@ -1,6 +1,18 @@
 # NextGen Laptops
 
-A fresh Next.js storefront and Supabase-backed inventory starter. The supplied list is transcribed as 95 numbered units, grouped into 45 configurations. Repeated configurations retain their source row numbers and quantity. In the absence of a configured database, the site displays this data as an explicitly labelled preview; the preview is not live stock.
+Next.js storefront and Supabase-backed inventory for NextGen Laptops. The original list was transcribed as 95 numbered units grouped into 45 configurations; live inventory is maintained in the admin panel. In the absence of a configured database, the site displays the original transcription as an explicitly labelled preview, not live stock.
+
+
+## Seller handover
+
+- Storefront: https://next-gen-laptops.vercel.app/ · Admin: https://next-gen-laptops.vercel.app/admin. Sign in with an authorised admin account; never share passwords or service-role keys.
+- **Products:** use the back-office search and filters, open a listing, change its price, condition, description or photos, then select **Save product**. Discount price is optional and must be lower than the regular price. Leave fields that do not apply blank; they will not appear in the specifications.
+- **Stock:** set the actual quantity. Automatic availability shows in stock for positive quantities and out of stock for zero; choose **Unconfirmed** only when availability is not known. Existing unconfirmed listings remain unconfirmed until an admin changes them.
+- **Publishing and homepage:** publish a product to show it in the store. Mark published listings **Feature on homepage** to select them; with none selected, the homepage falls back to its automatic selection.
+- **New categories:** create them in Categories before adding products. The storefront brand links and filters update from published products. URLs for new products are generated when the URL field is left blank.
+- **Variants:** identical name, processor, RAM and storage combinations are treated as one listing; update quantity for identical units. Give accessory variants such as different colours distinct names.
+- **Images and location:** manufacturer pictures may not show the exact unit; Surface 3 and HP ZBook still have placeholders. The map marks an approximate area. Confirm the exact address, image rights and product details before handover.
+- **Review stock and listing details regularly.** Back up the database and storage before major changes. Deleted or replaced image files are intentionally retained because they may be shared; review unreferenced files carefully before cleaning storage.
 
 ## Run locally
 
@@ -24,13 +36,13 @@ insert into public.admin_users (user_id) values ('<auth-user-uuid>');
 
 Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, restart the application, and sign in at `/admin/login`. Only users explicitly listed in `admin_users` can modify products, categories or storage. Use the public anon key in the application, never the service-role key. The migration creates the public `product-images` bucket and restricts image writes to admins. Uploaded images should be optimized WebP where possible, maximum 2 MB.
 
-Configure the same public environment variables for the Vercel project and deploy this branch through the normal Git workflow. No deployment or remote database migration has been performed automatically.
+Configure the same public environment variables for the Vercel project and deploy through the normal Git workflow. The current storefront is deployed at https://next-gen-laptops.vercel.app/. For existing stores, inspect and back up the database before applying migrations; do not rerun the initial setup against a populated project.
 
 ## Data provenance and limitations
 
-The source list does not include prices, actual stock status, condition, screen, exact processor models, graphics, warranty or drive type. Those fields must be verified before publishing; the app does not infer them. The quantities reflect the supplied rows, not confirmed current inventory. Some model names in the image are abbreviated (for example HP 840 G8, Lenovo L13 and HP ZBook); they are kept as provided rather than guessing a more specific variant. Product image placeholders clearly indicate missing photos. Manufacturer images are representative, not proof of an exact unit's appearance. Source links are provided on product pages; verify model variants and usage rights before production. Optimized local copies are included with the application; admin uploads use Supabase Storage.
+The original source list did not include prices, actual stock status, condition, screen, exact processor models, graphics, warranty or drive type. Live values are managed separately in the admin panel. The original quantities reflected supplied rows and need to be maintained as stock changes. Some model names in the image are abbreviated (for example HP 840 G8, Lenovo L13 and HP ZBook); they are kept as provided rather than guessing a more specific variant. Product image placeholders clearly indicate missing photos. Manufacturer images are representative, not proof of an exact unit's appearance. Source links are provided on product pages; verify model variants and usage rights before production. Optimized local copies are included with the application; admin uploads use Supabase Storage.
 
-This is a functional foundation, not a complete implementation of every item in `docs/architecture.md`: remaining work includes the two unverified product images and verified descriptions, banner management, advanced search RPCs, performance-budget validation, and production deployment. The supplied blueprint is retained for reference. The security policy in the blueprint granting write access to *every* authenticated account has intentionally been replaced with an explicit administrator allowlist.
+This is not a complete implementation of every item in `docs/architecture.md`: remaining work includes confirmation of two product images and exact descriptions, banner management, advanced search RPCs and performance-budget validation. The supplied blueprint is retained for reference. The security policy in the blueprint granting write access to *every* authenticated account has intentionally been replaced with an explicit administrator allowlist.
 
 ### Signage and product imagery
 
@@ -38,7 +50,7 @@ The storefront uses an optimized copy of the owner-supplied NextGen logo. The br
 
 ### Shop information
 
-The sign supplied by the owner provides the two phone numbers; the owner confirmed that 0321 5744034 is the WhatsApp number. A web search for NextGen Laptops Abbottabad surfaced a TikTok listing identifying Jadoon Plaza Phase 2, Mandian, Abbottabad: https://www.tiktok.com/discover/cycle-shop-in-abbottabad. The previous repository also listed this area. Confirm the precise unit and hours with the shop before visiting. Search results also include similarly named businesses in other cities; their addresses, contact details and commercial claims have not been copied. The catalogue is a preview until Supabase is configured and stock is verified.
+The sign supplied by the owner provides the two phone numbers; the owner confirmed that 0321 5744034 is the WhatsApp number. A web search for NextGen Laptops Abbottabad surfaced a TikTok listing identifying Jadoon Plaza Phase 2, Mandian, Abbottabad: https://www.tiktok.com/discover/cycle-shop-in-abbottabad. The previous repository also listed this area. Confirm the precise unit and hours with the shop before visiting. Search results also include similarly named businesses in other cities; their addresses, contact details and commercial claims have not been copied. The live catalogue uses Supabase; the shop should keep stock details up to date.
 
 Product detail pages distinguish the listed unit configuration from researched manufacturer model-family display options. Manufacturer sources are linked on the page; display panels and optional features may vary. Where the inventory lacks a precise model or specifications, the shop must verify them before listing them as facts for an individual unit.
 
