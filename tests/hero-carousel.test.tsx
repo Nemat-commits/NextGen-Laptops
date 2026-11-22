@@ -5,6 +5,9 @@ import HeroCarousel from '../src/components/HeroCarousel';
 
 const hero=renderToStaticMarkup(<HeroCarousel/>);
 assert.match(hero,/aria-roledescription="carousel"/);
+assert.equal((hero.match(/<h1(?:\s|>)/g)||[]).length,1);
+assert.match(hero,/hero-slide-words-stack/);
+assert.equal((hero.match(/class="hero-slide-words(?: is-active)?"/g)||[]).length,3);
 assert.match(hero,/Find the laptop/);
 assert.match(hero,/01 \/ 03/);
 assert.match(hero,/aria-label="Go to slide 1:/);
