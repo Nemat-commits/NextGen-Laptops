@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import {useState} from 'react';
+import React, {useState} from 'react';
 
 /** Images load near the viewport; the shimmer represents a real pending image request. */
 export default function LazyProductImage({src,alt}:{src:string|null;alt:string}){
