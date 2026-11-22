@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import LazyProductImage from './LazyProductImage';
-import {ArrowUpRight,Cpu,HardDrive,MemoryStick} from 'lucide-react';
+import {ArrowUpRight} from 'lucide-react';
 import type {Product,Category} from '@/lib/inventory';
 import ProductPrice from './ProductPrice';
 
@@ -18,12 +18,12 @@ export default function ProductCard({product:p,categories}:{product:Product,cate
   <div className="card-content">
    <div className="card-kicker">{p.brand?.trim()||kind}{p.brand?.trim()&&<> <span>/</span> {kind}</>}</div>
    <h3>{p.title}</h3>
-   {hasSpecs&&<div className="card-specs" aria-label="Product specifications">
-    {p.cpu?.trim()&&<span className="card-spec card-spec--cpu"><Cpu size={14} aria-hidden="true"/>{p.cpu.trim()}</span>}
-    {p.ram_gb!=null&&<span className="card-spec"><MemoryStick size={14} aria-hidden="true"/>{p.ram_gb} GB RAM</span>}
-    {p.storage_gb!=null&&<span className="card-spec"><HardDrive size={14} aria-hidden="true"/>{p.storage_gb} GB storage</span>}
-   </div>}
-   <div className="card-bottom"><div className="card-price"><span className="card-price-label">PRICE</span><ProductPrice original={p.price_pkr} discount={p.discount_price_pkr}/></div><span className="card-details">View details <ArrowUpRight size={15} aria-hidden="true"/></span></div>
+   {hasSpecs&&<dl className="card-specs" aria-label="Product specifications">
+    {p.cpu?.trim()&&<div className="card-spec card-spec--cpu"><dt>Processor</dt><dd>{p.cpu.trim()}</dd></div>}
+    {p.ram_gb!=null&&<div className="card-spec"><dt>Memory</dt><dd>{p.ram_gb} GB RAM</dd></div>}
+    {p.storage_gb!=null&&<div className="card-spec"><dt>Storage</dt><dd>{p.storage_gb} GB storage</dd></div>}
+   </dl>}
+   <div className="card-bottom"><div className="card-price"><span className="card-price-label">PRICE</span><ProductPrice original={p.price_pkr} discount={p.discount_price_pkr}/></div><span className="card-details"><span>View details</span><span className="card-arrow"><ArrowUpRight size={16} aria-hidden="true"/></span></span></div>
   </div>
  </Link>;
 }
