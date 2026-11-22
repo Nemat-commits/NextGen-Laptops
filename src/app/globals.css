@@ -247,16 +247,23 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 
 /* The original hero, with animated slides and direct drag/swipe navigation. */
 .hero{touch-action:pan-y}
-.hero-slide-words{animation:hero-copy-enter .45s cubic-bezier(.22,1,.36,1) both}
-.hero-slide-words p{animation:hero-copy-enter .55s cubic-bezier(.22,1,.36,1) both}
-@keyframes hero-copy-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.hero-slide-words-stack{display:grid;width:100%}
+.hero-slide-words{grid-area:1/1;min-width:0;opacity:0;visibility:hidden;transform:translateY(9px);transition:opacity .6s ease-in-out,transform .6s ease-in-out,visibility 0s linear .6s;pointer-events:none}
+.hero-slide-words.is-active{opacity:1;visibility:visible;transform:translateY(0);transition:opacity .6s ease-in-out,transform .6s ease-in-out,visibility 0s}
+.hero-heading{font-size:clamp(42px,4.5vw,64px);font-weight:650;line-height:1.08;letter-spacing:-.045em;margin:24px 0;overflow-wrap:break-word}
+.hero .hero-slide-words[data-theme="everyday"] :is(h1,.hero-heading) span{color:#76d3ff}
+.hero .hero-slide-words[data-theme="work"] :is(h1,.hero-heading) span{color:#8be5d6}
+.hero .hero-slide-words[data-theme="study"] :is(h1,.hero-heading) span{color:#c8c3ff}
+@media(max-width:1000px){.hero-heading{font-size:48px}}
+@media(max-width:680px){.hero-heading{font-size:40px;line-height:1.1}}
 .hero-art{cursor:grab;touch-action:pan-y;user-select:none}
+.hero-art:before,.hero-art:after{transition:opacity .6s ease-in-out}
 .hero-art:active{cursor:grabbing}
 .hero-art:focus-visible{outline:3px solid #087dc5;outline-offset:-4px}
-.hero-slide-visual{position:absolute;inset:0;opacity:0;transform:translateX(24px) scale(.985);transition:opacity .45s ease,transform .55s cubic-bezier(.22,1,.36,1);pointer-events:none}
+.hero-slide-visual{position:absolute;inset:0;opacity:0;transform:translateX(17px) scale(.99);transition:opacity .6s ease-in-out,transform .675s cubic-bezier(.275,1,.52,1);pointer-events:none}
 .hero-slide-visual.is-active{opacity:1;transform:translateX(var(--hero-drag,0px)) scale(1)}
 .hero.is-dragging .hero-slide-visual.is-active{transition:none}
-.hero-slide-visual .hero-product{transition:transform .55s cubic-bezier(.22,1,.36,1)}
+.hero-slide-visual .hero-product{transition:transform .675s cubic-bezier(.275,1,.52,1)}
 .hero-art-caption{right:155px}
 .hero-pagination{position:absolute;z-index:2;right:20px;bottom:14px;display:flex;flex-direction:column;align-items:center;color:#526d80}
 .hero-swipe-hint{font-size:9px;font-weight:750;letter-spacing:.11em;line-height:1.2;white-space:nowrap}
@@ -267,10 +274,10 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 .hero-dots button[aria-current="true"] span{width:21px;border-radius:5px;background:#087eb5}
 .hero-dots button:hover span{background:#086e9e}.hero-dots button:focus-visible{outline:3px solid #087dc5;outline-offset:-2px}
 @media(max-width:680px){.hero-art{min-height:285px}.hero-product{padding:32px 25px 72px!important}.hero-art-caption{left:auto;right:20px;bottom:18px;max-width:calc(100% - 160px);text-align:right;align-items:flex-end}.hero-art-caption strong{font-size:14px;line-height:1.2}.hero-pagination{left:14px;right:auto;bottom:10px;align-items:flex-start}.hero-swipe-hint{font-size:8px}.hero-hint-desktop{display:none}.hero-hint-touch{display:inline}}
-@media(prefers-reduced-motion:reduce){.hero-slide-words,.hero-slide-words p{animation:none}.hero-slide-visual,.hero-slide-visual .hero-product,.hero-dots button span{transition:none}.hero-art:hover .hero-product{transform:none}}
+@media(prefers-reduced-motion:reduce){.hero-slide-words,.hero-slide-visual,.hero-slide-visual .hero-product,.hero-dots button span{transition:none}.hero-art:hover .hero-product{transform:none}}
 
 /* Each slide has its own restrained colour and graphic direction. */
-.hero-copy{transition:background-color .55s ease}
+.hero-copy{transition:background-color .675s ease-in-out}
 .hero[data-theme="work"] .hero-copy{background-color:#07515c55}
 .hero[data-theme="study"] .hero-copy{background-color:#4b3e8260}
 .hero[data-theme="work"] h1 span{color:#8be5d6}
@@ -280,7 +287,7 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 .hero-slide-visual--study{background:linear-gradient(140deg,#f4f2fb,#dedcf4)}
 .hero-slide-visual--study:before{content:'';position:absolute;width:70%;aspect-ratio:1;left:8%;top:4%;border:1px solid #a6a2d96b;border-radius:50%;box-shadow:0 0 0 24px #aaa6e01a,0 0 0 50px #aaa6e00f}
 .hero-slide-visual--study:after{content:'';position:absolute;width:38%;height:2px;top:18%;right:5%;background:#9e9bd27a;transform:rotate(-35deg)}
-@media(prefers-reduced-motion:reduce){.hero-copy{transition:none}}
+@media(prefers-reduced-motion:reduce){.hero-copy,.hero-art:before,.hero-art:after{transition:none}}
 /* Keep the artwork in front of the themed background graphics. */
 .hero[data-theme="work"] .hero-art:before,.hero[data-theme="work"] .hero-art:after,.hero[data-theme="study"] .hero-art:before,.hero[data-theme="study"] .hero-art:after{opacity:0}
 .hero-slide-visual--work:before,.hero-slide-visual--study:before,.hero-slide-visual--study:after{z-index:0}

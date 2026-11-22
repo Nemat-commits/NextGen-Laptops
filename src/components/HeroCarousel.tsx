@@ -43,10 +43,12 @@ export default function HeroCarousel(){
   onDragStart={e=>e.preventDefault()}
   onKeyDown={e=>{if(!(e.target as HTMLElement).closest('.hero-art'))return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();select(index+(e.key==='ArrowRight'?1:-1))}}}>
   <div className="hero-copy">
-   <div className="hero-label"><span className="dot"/> {slide.kicker}</div>
-   <div className="hero-slide-words" key={index}>
-    <h1>{slide.title}<br/><span>{slide.accent}</span></h1>
-    <p>{slide.description}</p>
+   <div className="hero-slide-words-stack">
+    {slides.map((item,i)=><div key={item.theme} className={`hero-slide-words${i===index?' is-active':''}`} data-theme={item.theme} aria-hidden={i!==index}>
+     <div className="hero-label"><span className="dot"/> {item.kicker}</div>
+     {i===index?<h1>{item.title}<br/><span>{item.accent}</span></h1>:<div className="hero-heading">{item.title}<br/><span>{item.accent}</span></div>}
+     <p>{item.description}</p>
+    </div>)}
    </div>
    <div className="hero-actions"><Link className="primary-button" href="/shop">Explore laptops <ArrowRight size={18} aria-hidden="true"/></Link><a className="hero-contact" href="https://wa.me/923215744034" target="_blank" rel="noreferrer">Chat with us <ArrowUpRight size={15} aria-hidden="true"/></a></div>
   </div>
