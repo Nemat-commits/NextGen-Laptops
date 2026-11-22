@@ -244,3 +244,44 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
  .card-bottom{align-items:flex-end;gap:7px;padding-top:12px}.card-bottom .card-price-label{font-size:9px;margin-bottom:6px}.card-bottom .product-price{grid-template-rows:minmax(20px,auto) 20px;gap:0 5px}.card-bottom .product-price strong{font-size:14px}.card-bottom .product-price del{font-size:10px}.card-bottom .card-details{display:none}
 }
 @media(prefers-reduced-motion:reduce){.card:hover,.card:focus-visible,.card:hover .card-img img,.card:focus-visible .card-img img{transform:none}.card-bottom .card-arrow{transition:none}}
+
+/* The original hero, with animated slides and direct drag/swipe navigation. */
+.hero{touch-action:pan-y}
+.hero-slide-words{animation:hero-copy-enter .45s cubic-bezier(.22,1,.36,1) both}
+.hero-slide-words p{animation:hero-copy-enter .55s cubic-bezier(.22,1,.36,1) both}
+@keyframes hero-copy-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.hero-art{cursor:grab;touch-action:pan-y;user-select:none}
+.hero-art:active{cursor:grabbing}
+.hero-art:focus-visible{outline:3px solid #087dc5;outline-offset:-4px}
+.hero-slide-visual{position:absolute;inset:0;opacity:0;transform:translateX(24px) scale(.985);transition:opacity .45s ease,transform .55s cubic-bezier(.22,1,.36,1);pointer-events:none}
+.hero-slide-visual.is-active{opacity:1;transform:translateX(var(--hero-drag,0px)) scale(1)}
+.hero.is-dragging .hero-slide-visual.is-active{transition:none}
+.hero-slide-visual .hero-product{transition:transform .55s cubic-bezier(.22,1,.36,1)}
+.hero-art-caption{right:155px}
+.hero-pagination{position:absolute;z-index:2;right:20px;bottom:14px;display:flex;flex-direction:column;align-items:center;color:#526d80}
+.hero-swipe-hint{font-size:9px;font-weight:750;letter-spacing:.11em;line-height:1.2;white-space:nowrap}
+.hero-hint-touch{display:none}
+.hero-dots{display:flex;align-items:center}
+.hero-dots button{width:36px;height:36px;display:grid;place-items:center;border:0;padding:0;background:transparent;border-radius:6px;cursor:pointer}
+.hero-dots button span{display:block;width:8px;height:8px;background:#8aa8b9;border-radius:50%;transition:width .3s ease,background .3s ease,border-radius .3s ease}
+.hero-dots button[aria-current="true"] span{width:21px;border-radius:5px;background:#087eb5}
+.hero-dots button:hover span{background:#086e9e}.hero-dots button:focus-visible{outline:3px solid #087dc5;outline-offset:-2px}
+@media(max-width:680px){.hero-art{min-height:285px}.hero-product{padding:32px 25px 72px!important}.hero-art-caption{left:auto;right:20px;bottom:18px;max-width:calc(100% - 160px);text-align:right;align-items:flex-end}.hero-art-caption strong{font-size:14px;line-height:1.2}.hero-pagination{left:14px;right:auto;bottom:10px;align-items:flex-start}.hero-swipe-hint{font-size:8px}.hero-hint-desktop{display:none}.hero-hint-touch{display:inline}}
+@media(prefers-reduced-motion:reduce){.hero-slide-words,.hero-slide-words p{animation:none}.hero-slide-visual,.hero-slide-visual .hero-product,.hero-dots button span{transition:none}.hero-art:hover .hero-product{transform:none}}
+
+/* Each slide has its own restrained colour and graphic direction. */
+.hero-copy{transition:background-color .55s ease}
+.hero[data-theme="work"] .hero-copy{background-color:#07515c55}
+.hero[data-theme="study"] .hero-copy{background-color:#4b3e8260}
+.hero[data-theme="work"] h1 span{color:#8be5d6}
+.hero[data-theme="study"] h1 span{color:#c8c3ff}
+.hero-slide-visual--work{background:linear-gradient(135deg,#edf9f8,#d1eeeb)}
+.hero-slide-visual--work:before{content:'';position:absolute;inset:15% 11% 18%;border:1px solid #67a8a957;border-radius:12px;background:linear-gradient(90deg,transparent 49.8%,#80b6b723 50%,transparent 50.2%),linear-gradient(transparent 49.8%,#80b6b723 50%,transparent 50.2%);box-shadow:16px 16px 0 #7fb8b20f}
+.hero-slide-visual--study{background:linear-gradient(140deg,#f4f2fb,#dedcf4)}
+.hero-slide-visual--study:before{content:'';position:absolute;width:70%;aspect-ratio:1;left:8%;top:4%;border:1px solid #a6a2d96b;border-radius:50%;box-shadow:0 0 0 24px #aaa6e01a,0 0 0 50px #aaa6e00f}
+.hero-slide-visual--study:after{content:'';position:absolute;width:38%;height:2px;top:18%;right:5%;background:#9e9bd27a;transform:rotate(-35deg)}
+@media(prefers-reduced-motion:reduce){.hero-copy{transition:none}}
+/* Keep the artwork in front of the themed background graphics. */
+.hero[data-theme="work"] .hero-art:before,.hero[data-theme="work"] .hero-art:after,.hero[data-theme="study"] .hero-art:before,.hero[data-theme="study"] .hero-art:after{opacity:0}
+.hero-slide-visual--work:before,.hero-slide-visual--study:before,.hero-slide-visual--study:after{z-index:0}
+.hero-slide-visual--work .hero-product,.hero-slide-visual--study .hero-product{z-index:1}

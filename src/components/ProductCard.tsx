@@ -21,7 +21,7 @@ export default function ProductCard({product:p,categories}:{product:Product,cate
    {hasSpecs&&<dl className="card-specs" aria-label="Product specifications">
     {p.cpu?.trim()&&<div className="card-spec card-spec--cpu"><dt>Processor</dt><dd>{p.cpu.trim()}</dd></div>}
     {p.ram_gb!=null&&<div className="card-spec"><dt>Memory</dt><dd>{p.ram_gb} GB RAM</dd></div>}
-    {p.storage_gb!=null&&<div className="card-spec"><dt>Storage</dt><dd>{p.storage_gb} GB storage</dd></div>}
+    {p.storage_gb!=null&&<div className="card-spec"><dt>Storage</dt><dd>{p.storage_gb} GB</dd></div>}
    </dl>}
    <div className="card-bottom"><div className="card-price"><span className="card-price-label">PRICE</span><ProductPrice original={p.price_pkr} discount={p.discount_price_pkr}/></div><span className="card-details"><span>View details</span><span className="card-arrow"><ArrowUpRight size={16} aria-hidden="true"/></span></span></div>
   </div>
