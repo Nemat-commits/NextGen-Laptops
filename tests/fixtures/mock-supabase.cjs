@@ -2,14 +2,24 @@ const http=require('node:http');
 const {randomUUID}=require('node:crypto');
 const user={id:'57e001ae-4750-4af5-97cb-a2ec6517abe7',email:'admin@example.test',role:'authenticated',aud:'authenticated',app_metadata:{},user_metadata:{},created_at:new Date().toISOString()};
 const b=x=>Buffer.from(JSON.stringify(x)).toString('base64url'); const jwt=`${b({alg:'none',typ:'JWT'})}.${b({sub:user.id,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600})}.mock`;
+const validTokens=new Set([jwt]),refreshTokens=new Set(['mock-refresh']);let refreshCount=0;
+const isAuthenticated=req=>validTokens.has((req.headers.authorization||'').replace(/^Bearer /,''));
 let publicCounts={products:0,categories:0};let lastPublicAuth=null,catalogDelayMs=0;
 let adminCounts={auth:0,permission:0,products:0,categories:0},adminDelayMs=0,adminAllowed=true,adminReads=[],adminFailure='';
 let categories=[{id:'laptops',name:'Laptops',slug:'laptops'}],products=[];const objects=new Set();let catalogFailure=false,slugCollisionOnce=false;
 http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');let data='';for await(const chunk of req)data+=chunk;let body;try{body=JSON.parse(data||'{}')}catch{body={}};const send=(code,obj,extra={})=>{res.writeHead(code,{'Content-Type':'application/json',...extra});res.end(req.method==='HEAD'?'':JSON.stringify(obj))};
-if(url.pathname==='/auth/v1/token'&&req.method==='POST'){if(body.email!==user.email||body.password!=='local-test-password')return send(400,{error:'invalid_grant',error_description:'Invalid login'});return send(200,{access_token:jwt,token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:'mock-refresh',user})}
-if(url.pathname==='/auth/v1/user'){adminCounts.auth++;return req.headers.authorization===`Bearer ${jwt}`?send(200,user):send(401,{message:'invalid session'})}
+if(url.pathname==='/auth/v1/token'&&req.method==='POST'){
+ if(url.searchParams.get('grant_type')==='refresh_token'){
+  refreshCount++;if(!refreshTokens.delete(body.refresh_token))return send(400,{code:'refresh_token_not_found',msg:'Invalid refresh token'});
+  const access=`${b({alg:'none',typ:'JWT'})}.${b({sub:user.id,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600,jti:randomUUID()})}.mock`,refresh='mock-refresh-'+randomUUID();validTokens.add(access);refreshTokens.add(refresh);
+  return send(200,{access_token:access,token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:refresh,user});
+ }
+ if(body.email!==user.email||body.password!=='local-test-password')return send(400,{error:'invalid_grant',error_description:'Invalid login'});refreshTokens.add('mock-refresh');return send(200,{access_token:jwt,token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:'mock-refresh',user})
+}
+if(url.pathname==='/_qa/refresh-count')return send(200,{count:refreshCount});
+if(url.pathname==='/auth/v1/user'){adminCounts.auth++;return isAuthenticated(req)?send(200,user):send(401,{message:'invalid session'})}
 if(url.pathname==='/auth/v1/logout')return send(204,{});
-if(url.pathname==='/rest/v1/admin_users'){adminCounts.permission++;return send(200,adminAllowed&&req.headers.authorization===`Bearer ${jwt}`?[{user_id:user.id}]:[])}
+if(url.pathname==='/rest/v1/admin_users'){adminCounts.permission++;return send(200,adminAllowed&&isAuthenticated(req)?[{user_id:user.id}]:[])}
 if(url.pathname==='/_qa/admin-config'&&req.method==='POST'){adminDelayMs=Math.max(0,Math.min(2000,Number(body.delayMs)||0));if(typeof body.allowed==='boolean')adminAllowed=body.allowed;if(typeof body.failure==='string')adminFailure=body.failure;return send(200,{ok:true})}
 if(url.pathname==='/_qa/admin-reset'&&req.method==='POST'){adminCounts={auth:0,permission:0,products:0,categories:0};adminReads=[];return send(200,{ok:true})}
 if(url.pathname==='/_qa/admin-stats'&&req.method==='GET')return send(200,{...adminCounts,reads:adminReads});
@@ -22,14 +32,14 @@ if(url.pathname==='/_qa/storage-count')return send(200,{count:objects.size});
 if(url.pathname.startsWith('/storage/v1/object/product-images/')&&req.method==='POST'){const path=url.pathname.split('/').pop();objects.add(path);return send(200,{Key:'product-images/'+path})}
 if(url.pathname==='/storage/v1/object/product-images'&&req.method==='DELETE'){for(const path of body.prefixes||[])objects.delete(path);return send(200,[]);}
 const name=url.pathname.split('/').pop();if(!['categories','products'].includes(name))return send(404,{message:'missing mock route '+url.pathname});
-if(req.method==='GET'&&req.headers.authorization===`Bearer ${jwt}`){adminCounts[name]++;const read={name,start:Date.now()};adminReads.push(read);if(adminDelayMs)await new Promise(resolve=>setTimeout(resolve,adminDelayMs));read.end=Date.now();if(adminFailure===name)return send(503,{message:'simulated admin database failure'})}
-if(req.method==='GET'&&req.headers.authorization!==`Bearer ${jwt}`){let publicRead=false;if(name==='products'&&url.searchParams.get('is_published')==='eq.true'){publicCounts.products++;lastPublicAuth=req.headers.authorization||null;publicRead=true}if(name==='categories'){publicCounts.categories++;lastPublicAuth=req.headers.authorization||null;publicRead=true}if(publicRead&&catalogDelayMs)await new Promise(resolve=>setTimeout(resolve,catalogDelayMs))}
+if(req.method==='GET'&&isAuthenticated(req)){adminCounts[name]++;const read={name,start:Date.now()};adminReads.push(read);if(adminDelayMs)await new Promise(resolve=>setTimeout(resolve,adminDelayMs));read.end=Date.now();if(adminFailure===name)return send(503,{message:'simulated admin database failure'})}
+if(req.method==='GET'&&!isAuthenticated(req)){let publicRead=false;if(name==='products'&&url.searchParams.get('is_published')==='eq.true'){publicCounts.products++;lastPublicAuth=req.headers.authorization||null;publicRead=true}if(name==='categories'){publicCounts.categories++;lastPublicAuth=req.headers.authorization||null;publicRead=true}if(publicRead&&catalogDelayMs)await new Promise(resolve=>setTimeout(resolve,catalogDelayMs))}
 if(catalogFailure && name==='products' && req.method==='GET' && url.searchParams.get('is_published')==='eq.true')return send(503,{message:'simulated database failure'});
 let arr=name==='categories'?categories:products; const id=url.searchParams.get('id')?.replace(/^eq\./,'');let found=id?arr.filter(x=>x.id===id):arr;
 const revision=url.searchParams.get('revision')?.replace(/^eq\./,'');if(revision)found=found.filter(x=>x.revision===revision);
 if(url.searchParams.get('is_published')==='eq.true')found=found.filter(x=>x.is_published);
 if(req.method==='GET'||req.method==='HEAD'){const count=found.length,offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||count);found=found.slice(offset,offset+limit);return send(200,found,{'content-range':`${offset}-${Math.max(offset,offset+found.length-1)}/${count}`});}
-if(req.headers.authorization!==`Bearer ${jwt}`)return send(403,{message:'not authenticated'});
+if(!isAuthenticated(req))return send(403,{message:'not authenticated'});
 const norm=x=>String(x??'').trim().replace(/\s+/g,' ').toLowerCase();
 function duplicate(value,exclude){
  const others=arr.filter(x=>x.id!==exclude);

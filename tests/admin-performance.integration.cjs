@@ -14,7 +14,7 @@ async function api(path,body){const r=await fetch(mock+path,body===undefined?{}:
  const start=performance.now();const list=await page('/admin/products');const duration=Math.round(performance.now()-start);const stats=await api('/_qa/admin-stats');
  assert.equal(list.r.status,200);assert.match(list.html,/Private Performance Draft/);assert.equal(stats.products,1);assert.equal(stats.categories,1);
  const prod=stats.reads.find(r=>r.name==='products'),cat=stats.reads.find(r=>r.name==='categories');
- assert.equal(stats.auth,1,'One auth verification per render');assert.equal(stats.permission,1,'One admin permission check per render');assert.ok(prod.start<cat.end&&cat.start<prod.end,'Product and category reads should overlap');
+ assert.equal(stats.auth,2,'Middleware and page each verify authentication');assert.equal(stats.permission,1,'One admin permission check per render');assert.ok(prod.start<cat.end&&cat.start<prod.end,'Product and category reads should overlap');
  console.log(`PASS optimized list: ${duration}ms with 250ms per query; auth ${stats.auth}, permission ${stats.permission}; product/category overlap`);
  for(const failure of ['products','categories']){await api('/_qa/admin-config',{delayMs:0,failure});const failed=await page('/admin/products');assert.match(failed.html,/Could not load products or categories/);assert.doesNotMatch(failed.html,/Private Performance Draft/)}
  await api('/_qa/admin-config',{delayMs:0,failure:''});assert.match((await page('/admin/products')).html,/Private Performance Draft/);console.log('PASS product and category errors fail safely and recover');
