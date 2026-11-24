@@ -11,6 +11,8 @@ import {relatedProducts} from '@/lib/related';
 import {manufacturerDetails} from '@/lib/manufacturer-details';
 import {productSpecs} from '@/lib/product-specs';
 
+// Render per request while sharing only the public catalogue data cache.
+export const dynamic='force-dynamic';
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
  const {slug}=await params;const {products,error}=await catalog();if(error)return {title:'Product temporarily unavailable'};const p=products.find(x=>x.slug===slug);
  return p?{title:p.title,description:p.description,openGraph:{title:p.title,description:p.description,...(p.image_url?{images:[p.image_url]}:{})}}:{title:'Product not found'};

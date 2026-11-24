@@ -2,4 +2,6 @@ import type {Metadata} from 'next';
 import Catalog from '@/components/Catalog';
 import {catalog} from '@/lib/catalog';
 export const metadata:Metadata={title:'Shop laptops',description:'Browse and filter the NextGen Laptops collection by brand, processor, memory and more.'};
+// Render per request while sharing only the public catalogue data cache.
+export const dynamic='force-dynamic';
 export default async function Shop({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){const {products,categories,demo,error}=await catalog();const params=await searchParams;const q=new URLSearchParams();Object.entries(params).forEach(([k,v])=>{if(Array.isArray(v))v.forEach(x=>q.append(k,x));else if(v)q.append(k,v)});return <main><div className="shop-intro wrap" data-reveal><div><div className="eyebrow">NEXTGEN / THE COLLECTION</div><h1>Find your next laptop.</h1><p>Compare the details that matter and find the right fit for you.</p></div><span>CURATED IN ABBOTTABAD</span></div>{demo&&<div className="notice wrap">Inventory preview · Please confirm prices and availability with the shop.</div>}{error&&<div className="notice wrap">The catalog is temporarily unavailable. Please try again later.</div>}<Catalog products={products} categories={categories} initialQuery={q.toString()}/></main>}
