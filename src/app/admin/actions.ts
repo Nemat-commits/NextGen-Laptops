@@ -1,10 +1,14 @@
 'use server';
 import {redirect} from 'next/navigation';
-import {revalidatePath} from 'next/cache';
+import {revalidatePath,revalidateTag} from 'next/cache';
+import {PUBLIC_CATALOG_TAG} from '@/lib/cache-tags';
 import {supabase,configured} from '@/lib/supabase';
 import {requireAdmin} from '@/lib/admin';
 import {validateProduct,type ProductFormState} from '@/lib/product-validation';
 import {productSlugBase} from '@/lib/product-slug';
+
+/** Run only after a confirmed write; the catalogue is used by related products too. */
+function invalidatePublicCatalog(){revalidateTag(PUBLIC_CATALOG_TAG);revalidatePath('/');revalidatePath('/shop');revalidatePath('/laptops/[slug]','page')}
 
 export async function login(form:FormData){
  if(!configured())redirect('/admin/login?error=configuration');
@@ -19,14 +23,14 @@ export async function createCategory(form:FormData){
  if(!name||!slug||name.length>100)redirect('/admin/categories?error=invalid');
  const {error}=await db.from('categories').insert({name,slug});
  if(error)redirect(error.code==='23505'?'/admin/categories?error=duplicate':'/admin/categories?error=save');
- revalidatePath('/');revalidatePath('/shop');redirect('/admin/categories');
+ invalidatePublicCatalog();redirect('/admin/categories');
 }
 export async function deleteCategory(form:FormData){
  const db=await requireAdmin();const id=String(form.get('id')||'').trim();if(!id)redirect('/admin/categories?error=delete');
  const {data,error}=await db.from('categories').delete().eq('id',id).select('id');
  if(error)redirect(error.code==='23503'?'/admin/categories?error=in-use':'/admin/categories?error=delete');
  if(!data?.length)redirect('/admin/categories?error=missing');
- revalidatePath('/');revalidatePath('/shop');redirect('/admin/categories');
+ invalidatePublicCatalog();redirect('/admin/categories');
 }
 function failure(message:string,errors:ProductFormState['errors']={}):ProductFormState{return {message,errors}}
 export async function saveProduct(_previous:ProductFormState,form:FormData):Promise<ProductFormState>{
@@ -74,11 +78,11 @@ export async function saveProduct(_previous:ProductFormState,form:FormData):Prom
   return fail('The product could not be confirmed as saved. Check the product list before retrying; if you selected a photo, select it again.');
  }
  if(!data?.length){if(uploadedPath){const cleanup=await db.storage.from('product-images').remove([uploadedPath]);if(cleanup.error)console.error('Could not clean up unused upload')}return fail('This product was changed or removed while you were editing. Copy your changes, then refresh the product list before retrying.')}
- revalidatePath('/');revalidatePath('/shop');revalidatePath('/laptops/'+v.slug);if(oldSlug&&oldSlug!==v.slug)revalidatePath('/laptops/'+oldSlug);redirect('/admin/products');
+ invalidatePublicCatalog();revalidatePath('/laptops/'+v.slug);if(oldSlug&&oldSlug!==v.slug)revalidatePath('/laptops/'+oldSlug);redirect('/admin/products');
 }
 export async function deleteProduct(form:FormData){
  const db=await requireAdmin();const id=String(form.get('id')||'').trim(),revision=String(form.get('revision')||'').trim();if(!id||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(revision))redirect('/admin/products?error=stale');
  const {data,error}=await db.from('products').delete().eq('id',id).eq('revision',revision).select('id,slug');
  if(error)redirect('/admin/products?error=delete');if(!data?.length)redirect('/admin/products?error=stale');
- revalidatePath('/');revalidatePath('/shop');if(data[0].slug)revalidatePath('/laptops/'+data[0].slug);redirect('/admin/products');
+ invalidatePublicCatalog();if(data[0].slug)revalidatePath('/laptops/'+data[0].slug);redirect('/admin/products');
 }
