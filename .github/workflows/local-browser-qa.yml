@@ -71,3 +71,24 @@ jobs:
           trap 'kill "$mock_pid" "$next_pid" 2>/dev/null || true' EXIT
           for i in {1..60}; do curl -fsS http://127.0.0.1:3002/admin/login >/dev/null && break; sleep 1; done
           node tests/catalog-cache-ttl.integration.cjs
+  admin-performance:
+    if: contains(github.event.head_commit.message, '[run-isolated-qa]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:4001
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-publishable
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install dependencies
+        run: npm ci
+      - name: Test admin requests against isolated mock
+        run: |
+          node tests/fixtures/mock-supabase.cjs > /tmp/mock-supabase.log 2>&1 &
+          mock_pid=$!
+          npm run build
+          npm run start -- --port 3002 > /tmp/admin-next.log 2>&1 &
+          next_pid=$!
+          trap 'kill "$mock_pid" "$next_pid" 2>/dev/null || true' EXIT
+          for i in {1..60}; do curl -fsS http://127.0.0.1:3002/admin/login >/dev/null && break; sleep 1; done
+          node tests/admin-performance.integration.cjs
