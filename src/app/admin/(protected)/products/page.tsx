@@ -11,7 +11,7 @@ export default async function Products({searchParams}:{searchParams:Promise<{err
  const loadProducts=async()=>{
   const products:AdminProduct[]=[];const pageSize=1000;let loadError=false;
   for(let offset=0;;offset+=pageSize){
-   const {data,error}=await db.from('products').select('id,slug,title,brand,category_id,cpu,ram_gb,storage_gb,quantity,price_pkr,stock_status,is_published,is_featured').order('title').order('id').range(offset,offset+pageSize-1);
+   const {data,error}=await db.from('products').select('id,slug,title,brand,category_id,cpu,ram_gb,storage_gb,quantity,price_pkr,stock_status,is_published,is_featured,revision').order('title').order('id').range(offset,offset+pageSize-1);
    if(error){loadError=true;break}products.push(...(data as AdminProduct[]));if(data.length<pageSize)break;
   }
   return {products,loadError};

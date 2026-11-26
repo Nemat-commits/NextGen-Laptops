@@ -26,6 +26,20 @@ const {readFile}=require('node:fs/promises');
   await page.locator('[name=camera_file]').setInputFiles({name:'camera.png',mimeType:'image/png',buffer});await page.getByText(/Camera photo ready/).waitFor({timeout:30000});
   const info=await page.locator('[name=camera_file]').evaluate(el=>({size:el.files[0].size,type:el.files[0].type,capture:el.getAttribute('capture')}));assert.ok(info.size<=2*1024*1024);assert.equal(info.type,'image/jpeg');assert.equal(info.capture,'environment');assert.equal(await page.getByAltText('Selected product photo preview').count(),1);console.log('PASS camera input, photo compression and preview');
   await page.getByRole('button',{name:'Save product'}).click();await page.waitForURL('**/admin/products');assert.ok(!page.url().includes('error='));
+  // Quick visibility controls are isolated to one product and honor stale edits.
+  const staleVisibility=await context.newPage();await staleVisibility.goto(base+'/admin/products');
+  const row=page.locator('.admin-product-row').filter({hasText:'Browser Microsoft'});
+  const staleRow=staleVisibility.locator('.admin-product-row').filter({hasText:'Browser Microsoft'});
+  await row.getByRole('button',{name:'Featured selection for Browser Microsoft: off'}).click();
+  await row.getByRole('button',{name:'Featured selection for Browser Microsoft: on'}).waitFor();
+  await guest.goto(base+'/');assert.equal(await guest.locator('.home-featured').getByText('Browser Microsoft',{exact:true}).count(),1);
+  await staleRow.getByRole('button',{name:'Shop visibility for Browser Microsoft: on'}).click();await staleRow.getByRole('alert').waitFor();assert.match(await staleRow.getByRole('alert').innerText(),/changed or was removed/i);await staleVisibility.close();
+  await row.getByRole('button',{name:'Shop visibility for Browser Microsoft: on'}).click();await row.getByRole('button',{name:'Shop visibility for Browser Microsoft: off'}).waitFor();
+  await guest.goto(base+'/shop');assert.equal(await guest.getByText('Browser Microsoft',{exact:true}).count(),0);const hidden=await guest.goto(base+'/laptops/browser-microsoft');assert.equal(hidden.status(),404);
+  assert.equal(await row.getByRole('button',{name:'Featured selection for Browser Microsoft: on'}).getAttribute('aria-pressed'),'true');
+  await row.getByRole('button',{name:'Shop visibility for Browser Microsoft: off'}).click();await row.getByRole('button',{name:'Shop visibility for Browser Microsoft: on'}).waitFor();
+  await row.getByRole('button',{name:'Featured selection for Browser Microsoft: on'}).click();await row.getByRole('button',{name:'Featured selection for Browser Microsoft: off'}).waitFor();
+  await guest.goto(base+'/shop');assert.equal(await guest.getByText('Browser Microsoft',{exact:true}).count(),1);console.log('PASS quick visibility controls, storefront updates, preserved selection and stale-write protection');
   // Search works directly from the homepage navigation on desktop and mobile.
   await guest.setViewportSize({width:1280,height:720});await guest.goto(base+'/');
   const navSearch=guest.getByRole('search',{name:''});assert.equal(await navSearch.count(),1);await navSearch.getByLabel('Search products from navigation').fill('Browser Microsoft');await navSearch.getByLabel('Search products from navigation').press('Enter');await guest.waitForURL('**/shop?**');await guest.locator('.shop-results').waitFor();assert.equal(new URL(guest.url()).searchParams.get('q'),'Browser Microsoft');assert.equal(await guest.locator('.shop-results').getByText('Browser Microsoft',{exact:true}).count(),1);assert.equal(await guest.locator('.shop-search input').inputValue(),'Browser Microsoft');

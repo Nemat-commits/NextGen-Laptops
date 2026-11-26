@@ -1,7 +1,7 @@
 import type {Category,Product} from './inventory';
 import {normalizeBrand} from './brands';
 
-export type AdminProduct=Pick<Product,'id'|'slug'|'title'|'brand'|'category_id'|'cpu'|'ram_gb'|'storage_gb'|'quantity'|'price_pkr'|'stock_status'|'is_published'|'is_featured'>;
+export type AdminProduct=Pick<Product,'id'|'slug'|'title'|'brand'|'category_id'|'cpu'|'ram_gb'|'storage_gb'|'quantity'|'price_pkr'|'stock_status'|'is_published'|'is_featured'|'revision'>;
 export type AdminFilters={query:string;category:string;brand:string;publication:string;stock:string;featured:string};
 export const emptyAdminFilters=():AdminFilters=>({query:'',category:'',brand:'',publication:'',stock:'',featured:''});
 const normalize=(value:string)=>value.toLocaleLowerCase('en').trim().replace(/\s+/g,' ');
