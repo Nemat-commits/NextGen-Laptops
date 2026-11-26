@@ -7,6 +7,11 @@ const base='https://next-gen-laptops.vercel.app';
  try{
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   await context.route('**/*',async route=>{const r=route.request();if(!['GET','HEAD'].includes(r.method())||new URL(r.url()).origin!==base)return route.abort();return route.continue()});
+  for(const path of ['/admin/login','/admin/products','/shop']){
+   const times=[];let region='unreported',routing='unreported',status=0;
+   for(let i=0;i<3;i++){const start=performance.now();const response=await context.request.get(base+path,{maxRedirects:0,timeout:45000});await response.body();times.push(Math.round(performance.now()-start));status=response.status();region=response.headers()['x-vercel-execution-region']||region;routing=(response.headers()['x-vercel-id']||'').split('::').slice(0,2).join('::')||routing}
+   console.log(`::notice title=Read-only timing::${path} status ${status}, total response times ${times.join('/')} ms, execution region ${region}, Vercel route ${routing} (GitHub runner, not user location)`);
+  }
   const page=await context.newPage();const errors=[],bad=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{const u=new URL(r.url());if(u.origin===base&&(r.status()>=500||(/\/_next\/(static|image)/.test(u.pathname)&&r.status()>=400)))bad.push(`${r.status()} ${u.pathname}`)});
   const go=async path=>{const response=await page.goto(base+path,{waitUntil:'domcontentloaded',timeout:45000});assert.equal(response.status(),200,`${path} status`);await page.locator('body').waitFor()};
