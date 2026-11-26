@@ -1,0 +1,31 @@
+// Read-only production diagnostics: never sign in or send POST/PUT/PATCH/DELETE.
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+const base='https://next-gen-laptops.vercel.app';
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ try{
+  const context=await browser.newContext({viewport:{width:1280,height:900}});
+  await context.route('**/*',async route=>{const r=route.request();if(!['GET','HEAD'].includes(r.method())||new URL(r.url()).origin!==base)return route.abort();return route.continue()});
+  for(const path of ['/admin/login','/admin/products','/shop']){
+   const times=[];let region='unreported',routing='unreported',status=0;
+   for(let i=0;i<3;i++){const start=performance.now();const response=await context.request.get(base+path,{maxRedirects:0,timeout:45000});await response.body();times.push(Math.round(performance.now()-start));status=response.status();region=response.headers()['x-vercel-execution-region']||region;routing=(response.headers()['x-vercel-id']||'').split('::').slice(0,2).join('::')||routing}
+   console.log(`::notice title=Read-only timing::${path} status ${status}, total response times ${times.join('/')} ms, execution region ${region}, Vercel route ${routing} (GitHub runner, not user location)`);
+  }
+  const page=await context.newPage();const errors=[],bad=[];
+  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{const u=new URL(r.url());if(u.origin===base&&(r.status()>=500||(/\/_next\/(static|image)/.test(u.pathname)&&r.status()>=400)))bad.push(`${r.status()} ${u.pathname}`)});
+  const go=async path=>{const response=await page.goto(base+path,{waitUntil:'domcontentloaded',timeout:45000});assert.equal(response.status(),200,`${path} status`);await page.locator('body').waitFor()};
+  await go('/');await page.getByRole('heading',{name:/Find the laptop/i}).waitFor();assert.ok(await page.locator('.home-featured .card').count()>0,'homepage features products');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no desktop horizontal overflow');console.log('PASS homepage, featured cards, and desktop layout');
+  await page.getByLabel('Search products from navigation').fill('Dell');await page.getByLabel('Search products from navigation').press('Enter');await page.waitForURL('**/shop?**',{timeout:45000});await page.locator('.shop-results .card').first().waitFor();assert.equal(new URL(page.url()).searchParams.get('q'),'Dell');console.log('PASS navigation search and results');
+  await go('/shop');await page.locator('.shop-results .card').first().waitFor();const cards=page.locator('.shop-results .card');
+  for(let i=0;i<50&&await page.getByRole('button',{name:'Show more laptops'}).count();i++){await page.getByRole('button',{name:'Show more laptops'}).evaluate(el=>el.click());await page.waitForTimeout(100)}
+  const links=await cards.evaluateAll(nodes=>nodes.map(node=>node.getAttribute('href')));const count=Number(await page.locator('.results-top strong').innerText());assert.equal(links.length,count,'all listed product cards loaded');assert.equal(new Set(links).size,links.length,'product links unique');
+  for(const link of links){assert.ok(link?.startsWith('/laptops/'));const response=await context.request.get(base+link,{timeout:45000});assert.equal(response.status(),200,`product link ${link}`);const html=await response.text();assert.doesNotMatch(html,/Product temporarily unavailable|catalog is temporarily unavailable/i,`product detail error ${link}`)}
+  console.log(`PASS all ${links.length} listed product links return product pages`);const href=links[0];assert.ok(href?.startsWith('/laptops/'));await page.getByLabel('Sort products').selectOption('name');await page.getByLabel('Dell',{exact:true}).check();await page.waitForFunction(()=>new URL(location.href).searchParams.has('brand'));assert.ok(await cards.count()>0);await page.getByRole('button',{name:'Clear filters',exact:true}).click();console.log('PASS shop cards, filtering, sorting and clearing filters');
+  await go(href);await page.locator('.detail h1').waitFor();assert.ok(await page.getByRole('link',{name:/Enquire on WhatsApp/}).count());assert.ok(await page.locator('.detail-image img').count());console.log('PASS product detail and enquiry link');
+  const missing=await context.request.get(base+'/laptops/nonexistent-diagnostic-7b8e9a');assert.equal(missing.status(),404);await go('/about');await page.getByRole('heading',{name:/Meet Ashar/}).waitFor();console.log('PASS missing product and about page');
+  const guest=await context.request.get(base+'/admin/products',{maxRedirects:0});assert.ok([302,303,307,308].includes(guest.status()),`admin guest status ${guest.status()}`);assert.match(guest.headers().location,/admin\/login/);await go('/admin/login');await page.locator('[name=email]').waitFor();await page.locator('[name=password]').waitFor();console.log('PASS guest admin protection and login form');
+  await page.setViewportSize({width:320,height:800});await go('/');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile horizontal overflow');await page.getByRole('button',{name:'Open navigation menu'}).click();assert.equal(await page.getByRole('navigation',{name:'Mobile navigation'}).isVisible(),true);await page.getByRole('button',{name:'Close navigation menu'}).click();await go('/shop');await page.getByRole('button',{name:/Filters/}).click();assert.equal(await page.locator('#filter-panel').isVisible(),true);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile shop horizontal overflow');console.log('PASS mobile navigation and shop filters');
+  assert.deepEqual(errors,[],'unexpected client-side JavaScript errors');assert.deepEqual(bad,[],'unexpected site, script, stylesheet or image errors');console.log('PASS no client-side exceptions or critical asset/server errors during these checks');
+ }finally{await browser.close()}
+})().catch(e=>{console.error('::error title=Public production diagnostic failed::'+String(e.stack||e).replace(/\r?\n/g,' '));process.exitCode=1});
