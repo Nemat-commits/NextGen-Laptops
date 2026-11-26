@@ -1,9 +1,8 @@
 'use client';
 import {useMemo,useState} from 'react';
-import Link from 'next/link';
+import AdminProductRow from './AdminProductRow';
 import type {Category} from '@/lib/inventory';
 import {adminBrands,emptyAdminFilters,filterAdminProducts,type AdminFilters,type AdminProduct} from '@/lib/admin-product-filters';
-import {price} from '@/lib/formatters';
 
 export default function AdminProductList({products,categories}:{products:AdminProduct[],categories:Category[]}){
  const [filters,setFilters]=useState(emptyAdminFilters);
@@ -23,6 +22,7 @@ export default function AdminProductList({products,categories}:{products:AdminPr
    </div>
    <div className="admin-results-bar"><p role="status" aria-live="polite">{results.length} of {products.length} {products.length===1?'product':'products'}</p><button type="button" disabled={!active} onClick={()=>setFilters(emptyAdminFilters())}>Clear search and filters</button></div>
   </div>
-  <div className="admin-list">{results.map(p=><Link key={p.id} href={'/admin/products/'+p.id}><div><strong>{p.title}</strong><small>{[p.cpu?.trim(),p.is_published?'Published':'Draft',p.is_featured?'Featured on homepage':null,p.stock_status.replaceAll('_',' '),`${p.quantity} in inventory`].filter(Boolean).join(' · ')}</small></div><span>{price(p.price_pkr)} &nbsp; →</span></Link>)}{!products.length?<p>No products yet. Add one or run the inventory seed.</p>:!results.length&&<p>No products match. Try a different search or clear the filters.</p>}</div>
+  <p className="admin-visibility-help">Shop controls public visibility, including the product page. Featured selections appear on the homepage only when Shop is on. If no published products are selected, the homepage picks products automatically.</p>
+  <div className="admin-list">{results.map(p=><AdminProductRow key={p.id} product={p}/>)}{!products.length?<p>No products yet. Add one or run the inventory seed.</p>:!results.length&&<p>No products match. Try a different search or clear the filters.</p>}</div>
  </section>;
 }

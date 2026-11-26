@@ -292,3 +292,15 @@ a.social-item:hover{border-color:#49a9d6;color:#006fa9}
 .hero[data-theme="work"] .hero-art:before,.hero[data-theme="work"] .hero-art:after,.hero[data-theme="study"] .hero-art:before,.hero[data-theme="study"] .hero-art:after{opacity:0}
 .hero-slide-visual--work:before,.hero-slide-visual--study:before,.hero-slide-visual--study:after{z-index:0}
 .hero-slide-visual--work .hero-product,.hero-slide-visual--study .hero-product{z-index:1}
+
+/* Quick product visibility controls; the edit link and actions are separate targets. */
+.admin-visibility-help{color:var(--muted);font-size:12px;line-height:1.6;margin:20px 0 0}
+.admin-list>.admin-product-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.admin-product-edit{display:flex;justify-content:space-between;align-items:center;gap:14px;flex:1;min-width:240px}
+.admin-product-edit:hover strong{color:#087bb9;text-decoration:underline}
+.admin-visibility-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.admin-visibility-controls button{min-height:40px;border:1px solid #b9cbd9;border-radius:6px;background:#fff;color:#35536a;padding:8px 12px;font-size:12px;font-weight:700}
+.admin-visibility-controls button[aria-pressed=true]{border-color:#087bb9;background:#e5f5ff;color:#075f96}
+.admin-visibility-controls button:disabled{opacity:.6;cursor:wait}
+.admin-visibility-controls [role=alert]{color:#a33327}
+@media(max-width:680px){.admin-list>.admin-product-row{align-items:stretch;flex-direction:column;gap:12px}.admin-product-edit{min-width:0;width:100%}}

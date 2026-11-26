@@ -18,6 +18,21 @@ export async function login(form:FormData){
  redirect('/admin');
 }
 export async function logout(){const db=await supabase();await db.auth.signOut();redirect('/admin/login')}
+
+export type ProductVisibilityState={message:string;ok:boolean};
+export async function setProductVisibility(_previous:ProductVisibilityState,form:FormData):Promise<ProductVisibilityState>{
+ const db=await requireAdmin();
+ const id=String(form.get('id')||'').trim(),revision=String(form.get('revision')||'').trim(),change=String(form.get('change')||'');
+ if(!id||id.length>128||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(revision))return {ok:false,message:'This product may have changed. Refresh the list and try again.'};
+ const changes:Record<string,{is_published?:boolean;is_featured?:boolean}>={shop_on:{is_published:true},shop_off:{is_published:false},featured_on:{is_featured:true},featured_off:{is_featured:false}};
+ if(!Object.hasOwn(changes,change))return {ok:false,message:'Invalid visibility change. Refresh and try again.'};
+ const values=changes[change];
+ const {data,error}=await db.from('products').update(values).eq('id',id).eq('revision',revision).select('id,slug');
+ if(error)return {ok:false,message:'Could not confirm the change. Refresh the list before trying again.'};
+ if(!data?.length)return {ok:false,message:'This product changed or was removed. Refresh the list before trying again.'};
+ invalidatePublicCatalog();revalidatePath('/admin/products');if(data[0].slug)revalidatePath('/laptops/'+data[0].slug);
+ return {ok:true,message:'Visibility updated.'};
+}
 export async function createCategory(form:FormData){
  const db=await requireAdmin();const name=String(form.get('name')||'').trim();const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
  if(!name||!slug||name.length>100)redirect('/admin/categories?error=invalid');
