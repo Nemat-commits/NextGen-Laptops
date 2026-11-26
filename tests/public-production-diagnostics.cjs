@@ -1,0 +1,22 @@
+// Read-only production diagnostics: never sign in or send POST/PUT/PATCH/DELETE.
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+const base='https://next-gen-laptops.vercel.app';
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ try{
+  const context=await browser.newContext({viewport:{width:1280,height:900}});
+  await context.route('**/*',async route=>{const r=route.request();if(!['GET','HEAD'].includes(r.method())||new URL(r.url()).origin!==base)return route.abort();return route.continue()});
+  const page=await context.newPage();const errors=[],bad=[];
+  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{const u=new URL(r.url());if(u.origin===base&&(r.status()>=500||(/\/_next\/(static|image)/.test(u.pathname)&&r.status()>=400)))bad.push(`${r.status()} ${u.pathname}`)});
+  const go=async path=>{const response=await page.goto(base+path,{waitUntil:'domcontentloaded',timeout:45000});assert.equal(response.status(),200,`${path} status`);await page.locator('body').waitFor()};
+  await go('/');await page.getByRole('heading',{name:/Find the laptop/i}).waitFor();assert.ok(await page.locator('.home-featured .card').count()>0,'homepage features products');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no desktop horizontal overflow');console.log('PASS homepage, featured cards, and desktop layout');
+  await page.getByLabel('Search products from navigation').fill('Dell');await page.getByLabel('Search products from navigation').press('Enter');await page.waitForURL('**/shop?**',{timeout:45000});await page.locator('.shop-results .card').first().waitFor();assert.equal(new URL(page.url()).searchParams.get('q'),'Dell');console.log('PASS navigation search and results');
+  await go('/shop');await page.locator('.shop-results .card').first().waitFor();const cards=page.locator('.shop-results .card');const href=await cards.first().getAttribute('href');assert.ok(href?.startsWith('/laptops/'));await page.getByLabel('Sort products').selectOption('name');await page.getByLabel('Dell',{exact:true}).check();await page.waitForFunction(()=>new URL(location.href).searchParams.has('brand'));assert.ok(await cards.count()>0);await page.getByRole('button',{name:'Clear filters',exact:true}).click();console.log('PASS shop cards, filtering, sorting and clearing filters');
+  await go(href);await page.locator('.detail h1').waitFor();assert.ok(await page.getByRole('link',{name:/Enquire on WhatsApp/}).count());assert.ok(await page.locator('.detail-image img').count());console.log('PASS product detail and enquiry link');
+  const missing=await context.request.get(base+'/laptops/nonexistent-diagnostic-7b8e9a');assert.equal(missing.status(),404);await go('/about');await page.getByRole('heading',{name:/Meet Ashar/}).waitFor();console.log('PASS missing product and about page');
+  const guest=await context.request.get(base+'/admin/products',{maxRedirects:0});assert.ok([302,303,307,308].includes(guest.status()),`admin guest status ${guest.status()}`);assert.match(guest.headers().location,/admin\/login/);await go('/admin/login');await page.locator('[name=email]').waitFor();await page.locator('[name=password]').waitFor();console.log('PASS guest admin protection and login form');
+  await page.setViewportSize({width:320,height:800});await go('/');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile horizontal overflow');await page.getByRole('button',{name:'Open navigation menu'}).click();assert.equal(await page.getByRole('navigation',{name:'Mobile navigation'}).isVisible(),true);await page.getByRole('button',{name:'Close navigation menu'}).click();await go('/shop');await page.getByRole('button',{name:/Filters/}).click();assert.equal(await page.locator('#filter-panel').isVisible(),true);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile shop horizontal overflow');console.log('PASS mobile navigation and shop filters');
+  assert.deepEqual(errors,[],'unexpected client-side JavaScript errors');assert.deepEqual(bad,[],'unexpected site, script, stylesheet or image errors');console.log('PASS no client-side exceptions or critical asset/server errors during these checks');
+ }finally{await browser.close()}
+})().catch(e=>{console.error('::error title=Public production diagnostic failed::'+String(e.stack||e).replace(/\r?\n/g,' '));process.exitCode=1});
