@@ -31,7 +31,7 @@ const {readFile}=require('node:fs/promises');
   const row=page.locator('.admin-product-row').filter({hasText:'Browser Microsoft'});
   const staleRow=staleVisibility.locator('.admin-product-row').filter({hasText:'Browser Microsoft'});
   await row.getByRole('button',{name:'Featured selection for Browser Microsoft: off'}).click();
-  await row.getByRole('button',{name:'Featured selection for Browser Microsoft: on'}).waitFor();
+  try{await row.getByRole('button',{name:'Featured selection for Browser Microsoft: on'}).waitFor({timeout:12000})}catch(e){console.error('::error title=Visibility state::'+(await row.innerText()).replace(/\n/g,' | '));throw e}
   await guest.goto(base+'/');assert.equal(await guest.locator('.home-featured').getByText('Browser Microsoft',{exact:true}).count(),1);
   await staleRow.getByRole('button',{name:'Shop visibility for Browser Microsoft: on'}).click();await staleRow.getByRole('alert').waitFor();assert.match(await staleRow.getByRole('alert').innerText(),/changed or was removed/i);await staleVisibility.close();
   await row.getByRole('button',{name:'Shop visibility for Browser Microsoft: on'}).click();await row.getByRole('button',{name:'Shop visibility for Browser Microsoft: off'}).waitFor();
